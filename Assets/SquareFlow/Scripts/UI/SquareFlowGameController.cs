@@ -173,17 +173,22 @@ namespace SquareFlow.UI
 
                 BoardCell cell = state.Grid[r, c];
                 Color cellColor = cell.IsOccupied ? ColorForCell(cell) : theme.CellEmpty;
+                float tileSize = layout.Cell * SquareFlowVisualMetrics.TileFaceScale;
+                Vector2 tileDimensions = Vector2.one * tileSize;
+                Vector2 tilePosition = BoardPoint(c, r);
                 if (cell.IsOccupied)
                 {
-                    float depthOffset = layout.Cell * SquareFlowVisualMetrics.CellDepthOffsetScale;
-                    RectTransform shadow = AddPanel(board, "CellDepth", new Vector2(layout.Cell, layout.Cell), ColorWithAlpha(Color.black, 0.32f));
-                    shadow.GetComponent<Image>().raycastTarget = false;
-                    SetAnchored(shadow, BoardPoint(c, r) + new Vector2(depthOffset, -depthOffset));
+                    float depthDrop = layout.Cell * SquareFlowVisualMetrics.TileDepthDropScale;
+                    Color depthColor = LerpColor(cellColor, Color.black, SquareFlowVisualMetrics.TileDepthDarkenAmount);
+                    RectTransform depth = AddPanel(board, "CellDepth", tileDimensions, depthColor);
+                    depth.GetComponent<Image>().raycastTarget = false;
+                    SetAnchored(depth, tilePosition + new Vector2(0f, -depthDrop));
+                    ApplyOutline(depth, ColorWithAlpha(Color.black, 0.18f), 1f);
                 }
 
-                RectTransform tile = AddPanel(board, "Cell", new Vector2(layout.Cell, layout.Cell), cellColor);
-                SetAnchored(tile, BoardPoint(c, r));
-                ApplyOutline(tile, cell.IsOccupied ? ColorWithAlpha(Color.white, 0.28f) : ColorWithAlpha(theme.SubtleText, 0.24f), 1f);
+                RectTransform tile = AddPanel(board, "Cell", tileDimensions, cellColor);
+                SetAnchored(tile, tilePosition);
+                ApplyOutline(tile, cell.IsOccupied ? ColorWithAlpha(Color.white, 0.22f) : ColorWithAlpha(theme.Border, 0.18f), 1f);
 
                 if (cell.IsOccupied)
                     AddTileDepth(tile);
@@ -615,15 +620,16 @@ namespace SquareFlow.UI
 
         private void AddTileDepth(RectTransform tile)
         {
-            float highlightWidth = layout.Cell * 0.72f;
-            float highlightHeight = Mathf.Max(5f, layout.Cell * 0.16f);
-            RectTransform topLight = AddPanel(tile, "CellTopLight", new Vector2(highlightWidth, highlightHeight), ColorWithAlpha(Color.white, 0.22f));
+            float tileSize = tile.sizeDelta.x;
+            float highlightWidth = tileSize * 0.72f;
+            float highlightHeight = Mathf.Max(3f, tileSize * 0.08f);
+            RectTransform topLight = AddPanel(tile, "CellTopLight", new Vector2(highlightWidth, highlightHeight), ColorWithAlpha(Color.white, SquareFlowVisualMetrics.TileTopHighlightAlpha));
             topLight.GetComponent<Image>().raycastTarget = false;
-            SetAnchored(topLight, new Vector2(0f, layout.Cell * 0.28f));
+            SetAnchored(topLight, new Vector2(0f, tileSize * 0.3f));
 
-            RectTransform bottomShade = AddPanel(tile, "CellBottomShade", new Vector2(layout.Cell * 0.8f, highlightHeight), ColorWithAlpha(Color.black, 0.18f));
+            RectTransform bottomShade = AddPanel(tile, "CellBottomShade", new Vector2(tileSize * 0.82f, highlightHeight), ColorWithAlpha(Color.black, 0.1f));
             bottomShade.GetComponent<Image>().raycastTarget = false;
-            SetAnchored(bottomShade, new Vector2(0f, -layout.Cell * 0.28f));
+            SetAnchored(bottomShade, new Vector2(0f, -tileSize * 0.3f));
         }
 
         private void ApplyOutline(RectTransform rect, Color color, float distance)
@@ -663,7 +669,7 @@ namespace SquareFlow.UI
         private void EnsureRuntimeSprites()
         {
             if (roundedRectSprite != null) return;
-            roundedRectSprite = CreateRoundedRectSprite(40, 12);
+            roundedRectSprite = CreateRoundedRectSprite(96, 22);
             circleSprite = CreateCircleSprite(64, 0.5f, 0.5f);
             glowSprite = CreateCircleSprite(96, 0.5f, 0f);
         }
@@ -795,6 +801,10 @@ namespace SquareFlow.UI
         public const float ActiveOrbiterTokenScale = 0.98f;
         public const float ShooterButtonMinimumDiameter = 76f;
         public const float CellDepthOffsetScale = 0.09f;
+        public const float TileFaceScale = 0.92f;
+        public const float TileDepthDropScale = 0.14f;
+        public const float TileDepthDarkenAmount = 0.32f;
+        public const float TileTopHighlightAlpha = 0.14f;
     }
 
     public readonly struct SquareFlowGameplayScreenLayout

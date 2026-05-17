@@ -158,6 +158,15 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void ReferenceTileMetricsCreateRoundedRaisedBlocks()
+        {
+            Assert.That(SquareFlowVisualMetrics.TileFaceScale, Is.GreaterThanOrEqualTo(0.9f));
+            Assert.That(SquareFlowVisualMetrics.TileDepthDropScale, Is.GreaterThanOrEqualTo(0.12f));
+            Assert.That(SquareFlowVisualMetrics.TileDepthDarkenAmount, Is.InRange(0.22f, 0.42f));
+            Assert.That(SquareFlowVisualMetrics.TileTopHighlightAlpha, Is.InRange(0.08f, 0.22f));
+        }
+
+        [Test]
         public void ReferenceGameplayLayoutPlacesHudBoardQueueAndDockLikeMockup()
         {
             BoardLayout board = BoardLayout.Compute(5, 5, 620f);
