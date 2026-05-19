@@ -23,6 +23,7 @@ namespace SquareFlow.Runtime
             bool needsRebuild = boundShape == null
                 || boundShape.Rows != state.Shape.Rows
                 || boundShape.Cols != state.Shape.Cols
+                || cells.Count != state.Shape.ActiveCellCount()
                 || cells.Count == 0;
 
             if (needsRebuild)

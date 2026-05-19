@@ -37,6 +37,35 @@ namespace SquareFlow.Tests
             }
         }
 
+        [Test]
+        public void BoardWorldViewRebuildsWhenSameSizedShapeHasDifferentActiveCellCount()
+        {
+            GameObject host = new GameObject("BoardWorldViewHost");
+            try
+            {
+                BoardWorldView view = host.AddComponent<BoardWorldView>();
+                BoardShape fullShape = new BoardShape("Full", BoardShape.Mask(new[] { 1, 1 }, new[] { 1, 1 }));
+                BoardShape sparseShape = new BoardShape("Sparse", BoardShape.Mask(new[] { 1, 0 }, new[] { 0, 1 }));
+                BoardCell[,] grid =
+                {
+                    { BoardCell.Normal(FlowColor.Red, 1), BoardCell.Normal(FlowColor.Blue, 1) },
+                    { BoardCell.Normal(FlowColor.Green, 1), BoardCell.Normal(FlowColor.Yellow, 1) }
+                };
+                BoardLayout board = BoardLayout.Compute(2, 2, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+
+                view.Bind(GameState.Create(fullShape, grid, EmptyColumns(), 1), board, world, theme);
+                view.Bind(GameState.Create(sparseShape, grid, EmptyColumns(), 1), board, world, theme);
+
+                Assert.That(host.transform.childCount, Is.EqualTo(sparseShape.ActiveCellCount()));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
         private static List<Shooter>[] EmptyColumns()
         {
             return new[] { new List<Shooter>(), new List<Shooter>(), new List<Shooter>() };
