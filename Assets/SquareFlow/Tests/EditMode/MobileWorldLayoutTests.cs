@@ -35,22 +35,43 @@ namespace SquareFlow.Tests
         [Test]
         public void FirePointLookupUsesEventFireLane()
         {
-            BoardLayout board = BoardLayout.Compute(3, 3, 420f);
-            MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+            BoardLayout board = BoardLayout.Compute(4, 3, 420f);
+            Vector2 boardCenter = new Vector2(0.75f, -0.35f);
+            float scale = 0.015f;
+            MobileWorldLayout world = new MobileWorldLayout(board, boardCenter, scale);
             GameEvent hit = new GameEvent(
                 GameEventType.BlockDestroyed,
-                row: 1,
+                row: 0,
                 col: 2,
                 orbiterId: "o1",
                 score: 100,
                 fireSide: FireSide.Right,
-                fireRow: 1,
+                fireRow: 2,
                 fireCol: -1);
+            FirePoint matchingPoint = default;
+            bool hasMatchingPoint = false;
+            for (int i = 0; i < board.FirePoints.Count; i++)
+            {
+                FirePoint point = board.FirePoints[i];
+                if (point.Side != FireSide.Right || point.Row != 2 || point.Col != -1)
+                    continue;
+
+                matchingPoint = point;
+                hasMatchingPoint = true;
+                break;
+            }
+
+            Assert.That(hasMatchingPoint, Is.True);
+            Vector2 boardPoint = board.PathPosition(matchingPoint.Distance);
+            Vector2 expectedFirePoint = boardCenter + new Vector2(
+                boardPoint.x - board.CanvasWidth * 0.5f,
+                board.CanvasHeight * 0.5f - boardPoint.y) * scale;
 
             bool found = world.TryFirePoint(hit, out Vector2 firePoint);
 
             Assert.That(found, Is.True);
-            Assert.That(firePoint.x, Is.GreaterThan(world.CellCenter(2, 1).x));
+            Assert.That(firePoint.x, Is.EqualTo(expectedFirePoint.x).Within(0.001f));
+            Assert.That(firePoint.y, Is.EqualTo(expectedFirePoint.y).Within(0.001f));
         }
 
         [Test]
