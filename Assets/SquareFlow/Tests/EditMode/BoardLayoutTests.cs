@@ -174,10 +174,11 @@ namespace SquareFlow.Tests
 
             Assert.That(layout.HudSize.y, Is.EqualTo(122f));
             Assert.That(layout.UtilityButtonSize.x, Is.EqualTo(layout.UtilityButtonSize.y));
-            Assert.That(layout.UtilityButtonSize.x, Is.EqualTo(66f));
+            Assert.That(layout.UtilityButtonSize.x, Is.EqualTo(74f));
             Assert.That(layout.QueueSize.x, Is.EqualTo(154f));
+            Assert.That(layout.QueueSize.y, Is.EqualTo(430f));
             Assert.That(layout.QueueSize.y, Is.GreaterThan(board.GridHeight));
-            Assert.That(layout.DockSize.y, Is.EqualTo(128f));
+            Assert.That(layout.DockSize.y, Is.EqualTo(150f));
         }
 
         private static void AssertPointOnOrbitEllipse(BoardLayout layout, Vector2 point)

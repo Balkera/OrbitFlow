@@ -198,7 +198,7 @@ namespace SquareFlow.UI
 
         private void RenderWaiting(RectTransform queue)
         {
-            float startY = Mathf.Min(150f, state.WaitingQueue.Count * 46f);
+            float startY = (state.WaitingQueue.Count - 1) * 44f;
             for (int i = 0; i < state.WaitingQueue.Count; i++)
             {
                 int index = i;
@@ -758,7 +758,7 @@ namespace SquareFlow.UI
         public const float ActiveOrbiterHolderScale = 1.62f;
         public const float ActiveOrbiterGlowScale = 1.52f;
         public const float ActiveOrbiterTokenScale = 0.98f;
-        public const float ShooterButtonMinimumDiameter = 76f;
+        public const float ShooterButtonMinimumDiameter = 74f;
         public const float CellDepthOffsetScale = 0.09f;
         public const float TileFaceScale = 0.92f;
         public const float TileDepthDropScale = 0.14f;
