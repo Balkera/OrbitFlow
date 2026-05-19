@@ -19,7 +19,6 @@ namespace SquareFlow.UI
         private SaveDataService saveData;
         private SquareFlowAudio audioCue;
         private SquareFlowTheme theme;
-        private Canvas canvas;
         private RectTransform root;
         private Font font;
         private GameState state;
@@ -156,7 +155,7 @@ namespace SquareFlow.UI
             ClearDynamicObjects();
 
             Image background = root.GetComponent<Image>();
-            background.color = theme.Background;
+            background.color = Color.clear;
 
             SquareFlowGameplayScreenLayout screen = SquareFlowGameplayScreenLayout.Create(layout);
 
@@ -457,7 +456,7 @@ namespace SquareFlow.UI
         {
             GameObject canvasObject = new GameObject("SquareFlowCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(Image));
             canvasObject.transform.SetParent(transform, false);
-            canvas = canvasObject.GetComponent<Canvas>();
+            Canvas canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
             CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
