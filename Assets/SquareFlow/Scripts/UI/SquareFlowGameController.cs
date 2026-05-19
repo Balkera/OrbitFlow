@@ -32,7 +32,6 @@ namespace SquareFlow.UI
         private int seenEventCount;
         private GameResult seenResult;
         private bool resultHandled;
-        private Camera gameplayCamera;
         private MobileCameraController mobileCamera;
         private GameObject worldRoot;
         private BoardWorldView boardWorldView;
@@ -65,10 +64,13 @@ namespace SquareFlow.UI
             rules.UpdateCombo(Time.deltaTime);
             List<GameEvent> events = rules.Advance(Time.deltaTime);
             UpdateHudTexts();
-            if (state != null && worldRoot != null && worldRoot.activeSelf)
-                orbiterWorldView.Refresh(state.ActiveOrbiters, worldLayout, theme);
 
-            if (events.Count == 0 && state.Events.Count == seenEventCount) return;
+            if (events.Count == 0 && state.Events.Count == seenEventCount)
+            {
+                if (worldRoot != null && worldRoot.activeSelf)
+                    orbiterWorldView.Refresh(state.ActiveOrbiters, worldLayout, theme);
+                return;
+            }
 
             seenEventCount = state.Events.Count;
             PlayEvents(events);
@@ -235,7 +237,8 @@ namespace SquareFlow.UI
             bool fired = rules.FireFromColumn(column);
             PlayTone(fired ? 660f : 140f, fired ? 0.06f : 0.1f, 0.16f);
             RefreshGameView();
-            RefreshWorldGameplay();
+            if (fired)
+                seenEventCount = state.Events.Count;
         }
 
         private void FireWaiting(int index)
@@ -244,7 +247,8 @@ namespace SquareFlow.UI
             bool fired = rules.FireFromWaiting(index);
             PlayTone(fired ? 740f : 140f, fired ? 0.06f : 0.1f, 0.16f);
             RefreshGameView();
-            RefreshWorldGameplay();
+            if (fired)
+                seenEventCount = state.Events.Count;
         }
 
         private void ShowResultPanel()
@@ -473,7 +477,6 @@ namespace SquareFlow.UI
         {
             GameObject cameraObject = new GameObject("SquareFlowWorldCamera", typeof(Camera), typeof(MobileCameraController));
             cameraObject.transform.SetParent(transform, false);
-            gameplayCamera = cameraObject.GetComponent<Camera>();
             mobileCamera = cameraObject.GetComponent<MobileCameraController>();
 
             worldRoot = new GameObject("SquareFlowWorld");
