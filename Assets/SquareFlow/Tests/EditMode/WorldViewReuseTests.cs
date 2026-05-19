@@ -275,11 +275,19 @@ namespace SquareFlow.Tests
             try
             {
                 WorldEffectsController effects = host.AddComponent<WorldEffectsController>();
+                int expectedShotRenderers = WorldEffectsController.MaxConcurrentShots * 3;
 
-                for (int i = 0; i < WorldEffectsController.MaxConcurrentShots + 20; i++)
+                Assert.That(expectedShotRenderers, Is.EqualTo(WorldEffectsController.MaxEffectChildCount));
+
+                for (int i = 0; i < WorldEffectsController.MaxConcurrentShots; i++)
                     effects.PlayShot(Vector2.zero, Vector2.right, Color.red, false);
 
-                Assert.That(host.transform.childCount, Is.LessThanOrEqualTo(WorldEffectsController.MaxEffectChildCount));
+                Assert.That(host.transform.childCount, Is.EqualTo(expectedShotRenderers));
+
+                for (int i = 0; i < 20; i++)
+                    effects.PlayShot(Vector2.zero, Vector2.right, Color.red, false);
+
+                Assert.That(host.transform.childCount, Is.EqualTo(expectedShotRenderers));
 
                 effects.Clear();
 
