@@ -268,6 +268,36 @@ namespace SquareFlow.Tests
             }
         }
 
+        [Test]
+        public void WorldEffectsControllerBurstShotsCannotGrowBeyondEffectChildCap()
+        {
+            GameObject host = new GameObject("WorldEffectsHost");
+            try
+            {
+                WorldEffectsController effects = host.AddComponent<WorldEffectsController>();
+
+                for (int i = 0; i < WorldEffectsController.MaxConcurrentShots + 20; i++)
+                    effects.PlayShot(Vector2.zero, Vector2.right, Color.red, false);
+
+                Assert.That(host.transform.childCount, Is.LessThanOrEqualTo(WorldEffectsController.MaxEffectChildCount));
+
+                effects.Clear();
+
+                int extraRenderers = 10;
+                for (int i = 0; i < WorldEffectsController.MaxLinePoolSize + extraRenderers; i++)
+                    Release(effects, NewEffectRenderer(host.transform, "WorldShotStreak", SquareFlowWorldSprites.Square, 10));
+
+                for (int i = 0; i < WorldEffectsController.MaxCirclePoolSize + extraRenderers; i++)
+                    Release(effects, NewEffectRenderer(host.transform, "WorldShotGlow", SquareFlowWorldSprites.Glow, 11));
+
+                Assert.That(host.transform.childCount, Is.LessThanOrEqualTo(WorldEffectsController.MaxEffectChildCount));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
         private static bool HasChildNamed(Transform parent, string name)
         {
             for (int i = 0; i < parent.childCount; i++)
@@ -292,6 +322,12 @@ namespace SquareFlow.Tests
         {
             MethodInfo method = typeof(WorldEffectsController).GetMethod("Take", BindingFlags.Instance | BindingFlags.NonPublic);
             return (SpriteRenderer)method.Invoke(effects, new object[] { pool, name, sprite, order });
+        }
+
+        private static void Release(WorldEffectsController effects, SpriteRenderer renderer)
+        {
+            MethodInfo method = typeof(WorldEffectsController).GetMethod("Release", BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Invoke(effects, new object[] { renderer });
         }
 
         private static SpriteRenderer NewEffectRenderer(Transform parent, string name, Sprite sprite, int order)

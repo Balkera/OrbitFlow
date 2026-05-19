@@ -6,29 +6,55 @@ namespace SquareFlow.Runtime
 {
     public sealed class WorldEffectsController : MonoBehaviour
     {
+        public const int MaxConcurrentShots = 8;
+        public const int MaxLinePoolSize = MaxConcurrentShots;
+        public const int MaxCirclePoolSize = MaxConcurrentShots * 2;
+        public const int MaxEffectChildCount = MaxLinePoolSize + MaxCirclePoolSize;
+
         private readonly Queue<SpriteRenderer> linePool = new Queue<SpriteRenderer>();
         private readonly Queue<SpriteRenderer> circlePool = new Queue<SpriteRenderer>();
+        private readonly List<SpriteRenderer> clearBuffer = new List<SpriteRenderer>();
+        private int activeShotCount;
 
         public void PlayShot(Vector2 start, Vector2 end, Color color, bool heavyImpact)
         {
             if (!gameObject.activeInHierarchy) return;
-            StartCoroutine(AnimateShot(start, end, color, heavyImpact));
+            if (activeShotCount >= MaxConcurrentShots) return;
+
+            activeShotCount++;
+            StartCoroutine(PlayShotLifecycle(start, end, color, heavyImpact));
         }
 
         public void Clear()
         {
             StopAllCoroutines();
+            activeShotCount = 0;
 
             linePool.Clear();
             circlePool.Clear();
+
+            clearBuffer.Clear();
             for (int i = 0; i < transform.childCount; i++)
             {
                 SpriteRenderer renderer = transform.GetChild(i).GetComponent<SpriteRenderer>();
-                if (renderer == null) continue;
+                if (renderer != null)
+                    clearBuffer.Add(renderer);
+            }
 
+            for (int i = 0; i < clearBuffer.Count; i++)
+            {
+                SpriteRenderer renderer = clearBuffer[i];
                 renderer.gameObject.SetActive(false);
                 ReleaseToPool(renderer);
             }
+
+            clearBuffer.Clear();
+        }
+
+        private IEnumerator PlayShotLifecycle(Vector2 start, Vector2 end, Color color, bool heavyImpact)
+        {
+            yield return AnimateShot(start, end, color, heavyImpact);
+            activeShotCount = Mathf.Max(0, activeShotCount - 1);
         }
 
         private IEnumerator AnimateShot(Vector2 start, Vector2 end, Color color, bool heavyImpact)
@@ -87,7 +113,13 @@ namespace SquareFlow.Runtime
 
         private SpriteRenderer Take(Queue<SpriteRenderer> pool, string name, Sprite sprite, int order)
         {
-            SpriteRenderer renderer = pool.Count > 0 ? pool.Dequeue() : CreateRenderer(name, sprite, order);
+            SpriteRenderer renderer = null;
+            while (pool.Count > 0 && renderer == null)
+                renderer = pool.Dequeue();
+
+            if (renderer == null)
+                renderer = CreateRenderer(name, sprite, order);
+
             renderer.gameObject.name = name;
             renderer.sprite = sprite;
             renderer.sortingOrder = order;
@@ -113,10 +145,31 @@ namespace SquareFlow.Runtime
 
         private void ReleaseToPool(SpriteRenderer renderer)
         {
-            if (renderer.sprite == SquareFlowWorldSprites.Square)
-                linePool.Enqueue(renderer);
+            if (renderer == null) return;
+
+            Queue<SpriteRenderer> pool = renderer.sprite == SquareFlowWorldSprites.Square ? linePool : circlePool;
+            int maxPoolSize = renderer.sprite == SquareFlowWorldSprites.Square ? MaxLinePoolSize : MaxCirclePoolSize;
+            if (pool.Count < maxPoolSize)
+            {
+                pool.Enqueue(renderer);
+                return;
+            }
+
+            DestroyRenderer(renderer);
+        }
+
+        private static void DestroyRenderer(SpriteRenderer renderer)
+        {
+            if (renderer == null) return;
+
+            GameObject go = renderer.gameObject;
+            go.SetActive(false);
+            go.transform.SetParent(null, false);
+
+            if (Application.isPlaying)
+                Destroy(go);
             else
-                circlePool.Enqueue(renderer);
+                DestroyImmediate(go);
         }
 
         private void OnDisable()
