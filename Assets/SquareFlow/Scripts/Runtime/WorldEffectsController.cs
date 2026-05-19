@@ -18,8 +18,17 @@ namespace SquareFlow.Runtime
         public void Clear()
         {
             StopAllCoroutines();
+
+            linePool.Clear();
+            circlePool.Clear();
             for (int i = 0; i < transform.childCount; i++)
-                transform.GetChild(i).gameObject.SetActive(false);
+            {
+                SpriteRenderer renderer = transform.GetChild(i).GetComponent<SpriteRenderer>();
+                if (renderer == null) continue;
+
+                renderer.gameObject.SetActive(false);
+                ReleaseToPool(renderer);
+            }
         }
 
         private IEnumerator AnimateShot(Vector2 start, Vector2 end, Color color, bool heavyImpact)
@@ -79,6 +88,9 @@ namespace SquareFlow.Runtime
         private SpriteRenderer Take(Queue<SpriteRenderer> pool, string name, Sprite sprite, int order)
         {
             SpriteRenderer renderer = pool.Count > 0 ? pool.Dequeue() : CreateRenderer(name, sprite, order);
+            renderer.gameObject.name = name;
+            renderer.sprite = sprite;
+            renderer.sortingOrder = order;
             renderer.gameObject.SetActive(true);
             return renderer;
         }
@@ -96,6 +108,11 @@ namespace SquareFlow.Runtime
         private void Release(SpriteRenderer renderer)
         {
             renderer.gameObject.SetActive(false);
+            ReleaseToPool(renderer);
+        }
+
+        private void ReleaseToPool(SpriteRenderer renderer)
+        {
             if (renderer.sprite == SquareFlowWorldSprites.Square)
                 linePool.Enqueue(renderer);
             else

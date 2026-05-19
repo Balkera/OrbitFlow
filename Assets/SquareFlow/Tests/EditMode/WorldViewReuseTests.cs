@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using SquareFlow.Core;
 using SquareFlow.Runtime;
@@ -181,6 +182,59 @@ namespace SquareFlow.Tests
             }
         }
 
+        [Test]
+        public void WorldEffectsControllerResetsRendererWhenReusingCirclePool()
+        {
+            GameObject host = new GameObject("WorldEffectsHost");
+            try
+            {
+                WorldEffectsController effects = host.AddComponent<WorldEffectsController>();
+                Queue<SpriteRenderer> circlePool = Pool(effects, "circlePool");
+                SpriteRenderer renderer = NewEffectRenderer(host.transform, "WorldShotCore", SquareFlowWorldSprites.Circle, 12);
+                renderer.gameObject.SetActive(false);
+                circlePool.Enqueue(renderer);
+
+                SpriteRenderer reused = Take(effects, circlePool, "WorldShotGlow", SquareFlowWorldSprites.Glow, 11);
+
+                Assert.That(reused, Is.SameAs(renderer));
+                Assert.That(reused.gameObject.name, Is.EqualTo("WorldShotGlow"));
+                Assert.That(reused.sprite, Is.SameAs(SquareFlowWorldSprites.Glow));
+                Assert.That(reused.sortingOrder, Is.EqualTo(11));
+                Assert.That(reused.gameObject.activeSelf, Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void WorldEffectsControllerClearReclaimsInactiveChildrenIntoPools()
+        {
+            GameObject host = new GameObject("WorldEffectsHost");
+            try
+            {
+                WorldEffectsController effects = host.AddComponent<WorldEffectsController>();
+                SpriteRenderer line = NewEffectRenderer(host.transform, "WorldShotStreak", SquareFlowWorldSprites.Square, 10);
+                SpriteRenderer circle = NewEffectRenderer(host.transform, "WorldShotGlow", SquareFlowWorldSprites.Glow, 11);
+
+                effects.Clear();
+
+                Queue<SpriteRenderer> linePool = Pool(effects, "linePool");
+                Queue<SpriteRenderer> circlePool = Pool(effects, "circlePool");
+                Assert.That(linePool.Count, Is.EqualTo(1));
+                Assert.That(circlePool.Count, Is.EqualTo(1));
+                Assert.That(line.gameObject.activeSelf, Is.False);
+                Assert.That(circle.gameObject.activeSelf, Is.False);
+                Assert.That(linePool.Peek(), Is.SameAs(line));
+                Assert.That(circlePool.Peek(), Is.SameAs(circle));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
         private static bool HasChildNamed(Transform parent, string name)
         {
             for (int i = 0; i < parent.childCount; i++)
@@ -193,6 +247,28 @@ namespace SquareFlow.Tests
         private static List<Shooter>[] EmptyColumns()
         {
             return new[] { new List<Shooter>(), new List<Shooter>(), new List<Shooter>() };
+        }
+
+        private static Queue<SpriteRenderer> Pool(WorldEffectsController effects, string fieldName)
+        {
+            FieldInfo field = typeof(WorldEffectsController).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            return (Queue<SpriteRenderer>)field.GetValue(effects);
+        }
+
+        private static SpriteRenderer Take(WorldEffectsController effects, Queue<SpriteRenderer> pool, string name, Sprite sprite, int order)
+        {
+            MethodInfo method = typeof(WorldEffectsController).GetMethod("Take", BindingFlags.Instance | BindingFlags.NonPublic);
+            return (SpriteRenderer)method.Invoke(effects, new object[] { pool, name, sprite, order });
+        }
+
+        private static SpriteRenderer NewEffectRenderer(Transform parent, string name, Sprite sprite, int order)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            SpriteRenderer renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.sortingOrder = order;
+            return renderer;
         }
     }
 }
