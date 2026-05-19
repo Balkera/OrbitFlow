@@ -167,24 +167,16 @@ namespace SquareFlow.Tests
         }
 
         [Test]
-        public void ReferenceGameplayLayoutPlacesHudBoardQueueAndDockLikeMockup()
+        public void ReferenceGameplayLayoutKeepsCanvasForHudQueueAndDock()
         {
             BoardLayout board = BoardLayout.Compute(5, 5, 620f);
             SquareFlowGameplayScreenLayout layout = SquareFlowGameplayScreenLayout.Create(board);
 
-            Assert.That(layout.HudSize.x, Is.GreaterThan(layout.BoardPosition.x + board.CanvasWidth * 0.5f));
             Assert.That(layout.HudSize.y, Is.EqualTo(122f));
             Assert.That(layout.UtilityButtonSize.x, Is.EqualTo(layout.UtilityButtonSize.y));
             Assert.That(layout.UtilityButtonSize.x, Is.EqualTo(66f));
-
-            Assert.That(layout.BoardPosition.x, Is.LessThan(0f));
-            Assert.That(layout.QueuePosition.x, Is.GreaterThan(layout.BoardPosition.x + board.CanvasWidth * 0.5f));
             Assert.That(layout.QueueSize.x, Is.EqualTo(154f));
             Assert.That(layout.QueueSize.y, Is.GreaterThan(board.GridHeight));
-
-            float boardBottom = layout.BoardPosition.y - board.CanvasHeight * 0.5f;
-            float dockTop = layout.DockPosition.y + layout.DockSize.y * 0.5f;
-            Assert.That(dockTop, Is.LessThan(boardBottom));
             Assert.That(layout.DockSize.y, Is.EqualTo(128f));
         }
 

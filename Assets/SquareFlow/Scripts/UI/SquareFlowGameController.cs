@@ -16,7 +16,6 @@ namespace SquareFlow.UI
     public sealed class SquareFlowGameController : MonoBehaviour
     {
         private readonly List<GameObject> dynamicObjects = new List<GameObject>();
-        private readonly Dictionary<string, RectTransform> orbiterRects = new Dictionary<string, RectTransform>();
         private SaveDataService saveData;
         private SquareFlowAudio audioCue;
         private SquareFlowTheme theme;
@@ -30,10 +29,17 @@ namespace SquareFlow.UI
         private Text comboText;
         private Sprite roundedRectSprite;
         private Sprite circleSprite;
-        private Sprite glowSprite;
         private int seenEventCount;
         private GameResult seenResult;
         private bool resultHandled;
+        private Camera gameplayCamera;
+        private MobileCameraController mobileCamera;
+        private GameObject worldRoot;
+        private BoardWorldView boardWorldView;
+        private OrbitRingWorldView orbitRingWorldView;
+        private OrbiterWorldView orbiterWorldView;
+        private WorldEffectsController worldEffects;
+        private MobileWorldLayout worldLayout;
 
         private void Awake()
         {
@@ -44,6 +50,7 @@ namespace SquareFlow.UI
             EnsureRuntimeSprites();
             EnsureEventSystem();
             BuildCanvas();
+            BuildWorldRenderer();
         }
 
         private void Start()
@@ -58,7 +65,8 @@ namespace SquareFlow.UI
             rules.UpdateCombo(Time.deltaTime);
             List<GameEvent> events = rules.Advance(Time.deltaTime);
             UpdateHudTexts();
-            UpdateOrbiterVisuals();
+            if (state != null && worldRoot != null && worldRoot.activeSelf)
+                orbiterWorldView.Refresh(state.ActiveOrbiters, worldLayout, theme);
 
             if (events.Count == 0 && state.Events.Count == seenEventCount) return;
 
@@ -79,7 +87,16 @@ namespace SquareFlow.UI
             seenResult = GameResult.None;
             resultHandled = false;
             theme = new SquareFlowTheme(saveData.DarkMode);
+            StopAllCoroutines();
             ClearDynamicObjects();
+            if (worldRoot != null)
+            {
+                worldRoot.SetActive(false);
+                boardWorldView.Clear();
+                orbitRingWorldView.Clear();
+                orbiterWorldView.Clear();
+                worldEffects.Clear();
+            }
 
             Image background = root.GetComponent<Image>();
             background.color = theme.Background;
@@ -115,11 +132,19 @@ namespace SquareFlow.UI
             List<Shooter>[] columns = ShooterGenerator.BuildColumns(grid, shape, level, random);
 
             layout = BoardLayout.Compute(shape.Rows, shape.Cols, 860f);
+            worldLayout = MobileWorldLayout.Create(layout);
+            if (worldRoot != null)
+                worldRoot.SetActive(true);
+            if (mobileCamera != null)
+                mobileCamera.Configure(theme.Background);
             state = GameState.Create(shape, grid, columns, level);
             rules = new GameRules(state, layout);
             seenEventCount = 0;
             seenResult = GameResult.None;
             resultHandled = false;
+            StopAllCoroutines();
+            if (worldEffects != null)
+                worldEffects.Clear();
             PlayTone(523f, 0.08f, 0.18f);
             RefreshGameView();
         }
@@ -143,11 +168,7 @@ namespace SquareFlow.UI
             AddButton(hud, "R", new Vector2(382f, 0f), screen.UtilityButtonSize, theme.Button, theme.Text, StartLevel);
             AddButton(hud, "S", new Vector2(464f, 0f), screen.UtilityButtonSize, theme.Button, theme.Text, ToggleMuteInGame);
 
-            RectTransform board = AddPanel(root, "Board", new Vector2(layout.CanvasWidth, layout.CanvasHeight), new Color(0f, 0f, 0f, 0f));
-            SetAnchored(board, screen.BoardPosition);
-            RenderOrbitRing(board);
-            RenderBoard(board);
-            RenderOrbiters(board);
+            RefreshWorldGameplay();
 
             RectTransform queue = AddPanel(root, "WaitingQueue", screen.QueueSize, theme.Panel);
             SetAnchored(queue, screen.QueuePosition);
@@ -164,82 +185,14 @@ namespace SquareFlow.UI
                 ShowResultPanel();
         }
 
-        private void RenderBoard(RectTransform board)
+        private void RefreshWorldGameplay()
         {
-            for (int r = 0; r < state.Shape.Rows; r++)
-            for (int c = 0; c < state.Shape.Cols; c++)
-            {
-                if (!state.Shape.IsActive(r, c)) continue;
+            if (state == null || layout == null || !worldLayout.IsValid || worldRoot == null) return;
 
-                BoardCell cell = state.Grid[r, c];
-                Color cellColor = cell.IsOccupied ? ColorForCell(cell) : theme.CellEmpty;
-                float tileSize = layout.Cell * SquareFlowVisualMetrics.TileFaceScale;
-                Vector2 tileDimensions = Vector2.one * tileSize;
-                Vector2 tilePosition = BoardPoint(c, r);
-                if (cell.IsOccupied)
-                {
-                    float depthDrop = layout.Cell * SquareFlowVisualMetrics.TileDepthDropScale;
-                    Color depthColor = LerpColor(cellColor, Color.black, SquareFlowVisualMetrics.TileDepthDarkenAmount);
-                    RectTransform depth = AddPanel(board, "CellDepth", tileDimensions, depthColor);
-                    depth.GetComponent<Image>().raycastTarget = false;
-                    SetAnchored(depth, tilePosition + new Vector2(0f, -depthDrop));
-                    ApplyOutline(depth, ColorWithAlpha(Color.black, 0.18f), 1f);
-                }
-
-                RectTransform tile = AddPanel(board, "Cell", tileDimensions, cellColor);
-                SetAnchored(tile, tilePosition);
-                ApplyOutline(tile, cell.IsOccupied ? ColorWithAlpha(Color.white, 0.22f) : ColorWithAlpha(theme.Border, 0.18f), 1f);
-
-                if (cell.IsOccupied)
-                    AddTileDepth(tile);
-
-                if (cell.Type == BoardCellType.Bomb)
-                    AddWildBand(tile);
-
-                if (cell.Type == BoardCellType.Normal && cell.Hp > 1)
-                    AddText(tile, cell.Hp.ToString(), 16, FontStyle.Bold, Color.white, Vector2.zero, new Vector2(layout.Cell, layout.Cell));
-                else if (cell.Type == BoardCellType.Bomb)
-                    AddText(tile, "*", 18, FontStyle.Bold, theme.Score, Vector2.zero, new Vector2(layout.Cell, layout.Cell));
-            }
-        }
-
-        private void RenderOrbiters(RectTransform board)
-        {
-            for (int i = 0; i < state.ActiveOrbiters.Count; i++)
-            {
-                ActiveOrbiter orbiter = state.ActiveOrbiters[i];
-                Vector2 position = layout.PathPosition(orbiter.Distance);
-                Color tokenColor = ColorForShooter(orbiter.Color, orbiter.Wild);
-                Vector2 anchored = new Vector2(position.x - layout.CanvasWidth * 0.5f, layout.CanvasHeight * 0.5f - position.y);
-
-                RectTransform holder = AddContainer(board, "OrbiterRoot", Vector2.one * (layout.Cell * 1.25f));
-                SetAnchored(holder, anchored);
-
-                RectTransform glow = AddPanel(holder, "OrbiterGlow", Vector2.one * (layout.Cell * 1.15f), ColorWithAlpha(tokenColor, 0.64f), glowSprite);
-                glow.GetComponent<Image>().raycastTarget = false;
-                SetAnchored(glow, Vector2.zero);
-
-                float tokenSize = layout.Cell * 0.68f;
-                RectTransform dot = AddPanel(holder, "Orbiter", Vector2.one * tokenSize, tokenColor, circleSprite);
-                dot.GetComponent<Image>().raycastTarget = false;
-                SetAnchored(dot, Vector2.zero);
-                ApplyOutline(dot, ColorWithAlpha(Color.white, 0.5f), 2f);
-                orbiterRects[orbiter.Id] = holder;
-            }
-        }
-
-        private void UpdateOrbiterVisuals()
-        {
-            if (layout == null || state == null || orbiterRects.Count == 0) return;
-
-            for (int i = 0; i < state.ActiveOrbiters.Count; i++)
-            {
-                ActiveOrbiter orbiter = state.ActiveOrbiters[i];
-                if (!orbiterRects.TryGetValue(orbiter.Id, out RectTransform rect) || rect == null) continue;
-
-                Vector2 position = layout.PathPosition(orbiter.Distance);
-                rect.anchoredPosition = new Vector2(position.x - layout.CanvasWidth * 0.5f, layout.CanvasHeight * 0.5f - position.y);
-            }
+            worldRoot.SetActive(true);
+            boardWorldView.Bind(state, layout, worldLayout, theme);
+            orbitRingWorldView.Bind(layout, worldLayout, theme);
+            orbiterWorldView.Refresh(state.ActiveOrbiters, worldLayout, theme);
         }
 
         private void RenderWaiting(RectTransform queue)
@@ -282,6 +235,7 @@ namespace SquareFlow.UI
             bool fired = rules.FireFromColumn(column);
             PlayTone(fired ? 660f : 140f, fired ? 0.06f : 0.1f, 0.16f);
             RefreshGameView();
+            RefreshWorldGameplay();
         }
 
         private void FireWaiting(int index)
@@ -290,6 +244,7 @@ namespace SquareFlow.UI
             bool fired = rules.FireFromWaiting(index);
             PlayTone(fired ? 740f : 140f, fired ? 0.06f : 0.1f, 0.16f);
             RefreshGameView();
+            RefreshWorldGameplay();
         }
 
         private void ShowResultPanel()
@@ -382,12 +337,19 @@ namespace SquareFlow.UI
         {
             for (int i = 0; i < events.Count; i++)
             {
-                switch (events[i].Type)
+                GameEvent gameEvent = events[i];
+                switch (gameEvent.Type)
                 {
+                    case GameEventType.BlockDamaged:
+                        SpawnShotEffect(gameEvent, false);
+                        PlayTone(620f, 0.035f, 0.1f);
+                        break;
                     case GameEventType.BlockDestroyed:
+                        SpawnShotEffect(gameEvent, true);
                         PlayTone(784f, 0.05f, 0.12f);
                         break;
                     case GameEventType.BombDetonated:
+                        SpawnShotEffect(gameEvent, true);
                         PlayTone(110f, 0.14f, 0.18f);
                         break;
                     case GameEventType.Blocked:
@@ -395,6 +357,29 @@ namespace SquareFlow.UI
                         break;
                 }
             }
+        }
+
+        private void SpawnShotEffect(GameEvent gameEvent, bool heavyImpact)
+        {
+            if (layout == null || !worldLayout.IsValid || worldEffects == null || !gameEvent.HasFirePoint) return;
+            if (!worldLayout.TryFirePoint(gameEvent, out Vector2 start)) return;
+
+            Vector2 end = worldLayout.EventTarget(gameEvent);
+            Color color = ShotColor(gameEvent);
+            worldEffects.PlayShot(start, end, color, heavyImpact || gameEvent.Type == GameEventType.BombDetonated);
+        }
+
+        private Color ShotColor(GameEvent gameEvent)
+        {
+            if (gameEvent.Type == GameEventType.BombDetonated) return theme.Bomb;
+
+            if (!string.IsNullOrEmpty(gameEvent.OrbiterId) && orbiterWorldView != null && orbiterWorldView.TryGetColor(gameEvent.OrbiterId, out Color orbiterColor))
+                return orbiterColor;
+
+            if (state != null && state.Shape.IsActive(gameEvent.Row, gameEvent.Col) && state.Grid[gameEvent.Row, gameEvent.Col].IsOccupied)
+                return ColorForCell(state.Grid[gameEvent.Row, gameEvent.Col]);
+
+            return theme.Score;
         }
 
         private void ToggleTheme()
@@ -414,6 +399,8 @@ namespace SquareFlow.UI
         {
             saveData.DarkMode = !saveData.DarkMode;
             theme = new SquareFlowTheme(saveData.DarkMode);
+            if (mobileCamera != null)
+                mobileCamera.Configure(theme.Background);
             RefreshGameView();
         }
 
@@ -462,35 +449,6 @@ namespace SquareFlow.UI
             }
         }
 
-        private void RenderOrbitRing(RectTransform board)
-        {
-            float segmentLength = Mathf.Max(12f, layout.Cell * 0.32f);
-            float thickness = Mathf.Max(3.5f, layout.Cell * 0.06f);
-            float spacing = segmentLength * 0.52f;
-            int count = Mathf.Max(112, Mathf.CeilToInt(layout.Perimeter / spacing));
-            Color glow = ColorWithAlpha(theme.Score, 0.12f);
-            Color ring = ColorWithAlpha(theme.Score, 0.62f);
-
-            for (int i = 0; i < count; i++)
-            {
-                float distance = layout.Perimeter * i / count;
-                Vector2 anchored = BoardAnchored(layout.PathPosition(distance));
-                Vector2 before = BoardAnchored(layout.PathPosition(distance - spacing * 0.45f));
-                Vector2 after = BoardAnchored(layout.PathPosition(distance + spacing * 0.45f));
-                float angle = Mathf.Atan2(after.y - before.y, after.x - before.x) * Mathf.Rad2Deg;
-
-                RectTransform halo = AddPanel(board, "OrbitLineGlow", new Vector2(segmentLength * 1.6f, thickness * 4.4f), glow);
-                halo.GetComponent<Image>().raycastTarget = false;
-                halo.localRotation = Quaternion.Euler(0f, 0f, angle);
-                SetAnchored(halo, anchored);
-
-                RectTransform segment = AddPanel(board, "OrbitLine", new Vector2(segmentLength, thickness), ring);
-                segment.GetComponent<Image>().raycastTarget = false;
-                segment.localRotation = Quaternion.Euler(0f, 0f, angle);
-                SetAnchored(segment, anchored);
-            }
-        }
-
         private void BuildCanvas()
         {
             GameObject canvasObject = new GameObject("SquareFlowCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(Image));
@@ -509,6 +467,32 @@ namespace SquareFlow.UI
             root.offsetMin = Vector2.zero;
             root.offsetMax = Vector2.zero;
             canvasObject.GetComponent<Image>().color = theme.Background;
+        }
+
+        private void BuildWorldRenderer()
+        {
+            GameObject cameraObject = new GameObject("SquareFlowWorldCamera", typeof(Camera), typeof(MobileCameraController));
+            cameraObject.transform.SetParent(transform, false);
+            gameplayCamera = cameraObject.GetComponent<Camera>();
+            mobileCamera = cameraObject.GetComponent<MobileCameraController>();
+
+            worldRoot = new GameObject("SquareFlowWorld");
+            worldRoot.transform.SetParent(transform, false);
+
+            boardWorldView = new GameObject("BoardWorldView").AddComponent<BoardWorldView>();
+            boardWorldView.transform.SetParent(worldRoot.transform, false);
+
+            orbitRingWorldView = new GameObject("OrbitRingWorldView").AddComponent<OrbitRingWorldView>();
+            orbitRingWorldView.transform.SetParent(worldRoot.transform, false);
+
+            orbiterWorldView = new GameObject("OrbiterWorldView").AddComponent<OrbiterWorldView>();
+            orbiterWorldView.transform.SetParent(worldRoot.transform, false);
+
+            worldEffects = new GameObject("WorldEffects").AddComponent<WorldEffectsController>();
+            worldEffects.transform.SetParent(worldRoot.transform, false);
+
+            worldRoot.SetActive(false);
+            mobileCamera.Configure(theme.Background);
         }
 
         private RectTransform AddPanel(RectTransform parent, string objectName, Vector2 size, Color color)
@@ -602,36 +586,6 @@ namespace SquareFlow.UI
                 text.rectTransform.sizeDelta = new Vector2(diameter, diameter);
         }
 
-        private void AddWildBand(RectTransform tile)
-        {
-            RectTransform band = AddContainer(tile, "WildBand", new Vector2(layout.Cell * 1.45f, layout.Cell * 0.42f));
-            band.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0f, 0f, -45f);
-            SetAnchored(band, Vector2.zero);
-
-            Color[] colors = { theme.Red, theme.Yellow, theme.Green, theme.Blue };
-            float stripWidth = band.sizeDelta.x / colors.Length;
-            for (int i = 0; i < colors.Length; i++)
-            {
-                RectTransform strip = AddPanel(band, "WildBandStrip", new Vector2(stripWidth + 1f, band.sizeDelta.y), colors[i]);
-                strip.GetComponent<Image>().raycastTarget = false;
-                SetAnchored(strip, new Vector2(-band.sizeDelta.x * 0.5f + stripWidth * (i + 0.5f), 0f));
-            }
-        }
-
-        private void AddTileDepth(RectTransform tile)
-        {
-            float tileSize = tile.sizeDelta.x;
-            float highlightWidth = tileSize * 0.72f;
-            float highlightHeight = Mathf.Max(3f, tileSize * 0.08f);
-            RectTransform topLight = AddPanel(tile, "CellTopLight", new Vector2(highlightWidth, highlightHeight), ColorWithAlpha(Color.white, SquareFlowVisualMetrics.TileTopHighlightAlpha));
-            topLight.GetComponent<Image>().raycastTarget = false;
-            SetAnchored(topLight, new Vector2(0f, tileSize * 0.3f));
-
-            RectTransform bottomShade = AddPanel(tile, "CellBottomShade", new Vector2(tileSize * 0.82f, highlightHeight), ColorWithAlpha(Color.black, 0.1f));
-            bottomShade.GetComponent<Image>().raycastTarget = false;
-            SetAnchored(bottomShade, new Vector2(0f, -tileSize * 0.3f));
-        }
-
         private void ApplyOutline(RectTransform rect, Color color, float distance)
         {
             Outline outline = rect.gameObject.AddComponent<Outline>();
@@ -671,7 +625,6 @@ namespace SquareFlow.UI
             if (roundedRectSprite != null) return;
             roundedRectSprite = CreateRoundedRectSprite(96, 22);
             circleSprite = CreateCircleSprite(64, 0.5f, 0.5f);
-            glowSprite = CreateCircleSprite(96, 0.5f, 0f);
         }
 
         private static Sprite CreateRoundedRectSprite(int size, int radius)
@@ -720,16 +673,6 @@ namespace SquareFlow.UI
             return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
         }
 
-        private Vector2 BoardPoint(int col, int row)
-        {
-            return new Vector2(layout.CellCenterX(col) - layout.CanvasWidth * 0.5f, layout.CanvasHeight * 0.5f - layout.CellCenterY(row));
-        }
-
-        private Vector2 BoardAnchored(Vector2 point)
-        {
-            return new Vector2(point.x - layout.CanvasWidth * 0.5f, layout.CanvasHeight * 0.5f - point.y);
-        }
-
         private static void SetAnchored(RectTransform rect, Vector2 position)
         {
             rect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -750,7 +693,6 @@ namespace SquareFlow.UI
                 }
             }
             dynamicObjects.Clear();
-            orbiterRects.Clear();
             hudText = null;
             comboText = null;
         }
