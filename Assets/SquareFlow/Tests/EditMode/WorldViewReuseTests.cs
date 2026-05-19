@@ -152,6 +152,35 @@ namespace SquareFlow.Tests
             }
         }
 
+        [Test]
+        public void OrbiterWorldViewReusesObjectForSameOrbiterId()
+        {
+            GameObject host = new GameObject("OrbiterWorldViewHost");
+            try
+            {
+                OrbiterWorldView view = host.AddComponent<OrbiterWorldView>();
+                BoardLayout board = BoardLayout.Compute(1, 1, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+                List<ActiveOrbiter> orbiters = new List<ActiveOrbiter>
+                {
+                    new ActiveOrbiter(new Shooter("same-id", FlowColor.Red, 1, false))
+                };
+
+                view.Refresh(orbiters, world, theme);
+                Transform first = host.transform.GetChild(0);
+                orbiters[0].Distance = board.Perimeter * 0.5f;
+                view.Refresh(orbiters, world, theme);
+
+                Assert.That(host.transform.childCount, Is.EqualTo(1));
+                Assert.That(host.transform.GetChild(0), Is.EqualTo(first));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
         private static bool HasChildNamed(Transform parent, string name)
         {
             for (int i = 0; i < parent.childCount; i++)
