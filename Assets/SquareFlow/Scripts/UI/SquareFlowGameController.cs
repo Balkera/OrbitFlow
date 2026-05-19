@@ -203,7 +203,7 @@ namespace SquareFlow.UI
             {
                 int index = i;
                 Shooter shooter = state.WaitingQueue[i];
-                AddShooterButton(queue, shooter, new Vector2(0f, startY - i * 88f), Vector2.one * 62f, () => FireWaiting(index));
+                AddShooterButton(queue, shooter, new Vector2(0f, startY - i * 88f), Vector2.one * 74f, () => FireWaiting(index));
             }
         }
 
@@ -215,18 +215,18 @@ namespace SquareFlow.UI
             {
                 int column = i;
                 float x = startX + i * spacing;
-                RectTransform slot = AddPanel(columns, "DockSlot", new Vector2(80f, 80f), theme.DockSlot);
+                RectTransform slot = AddPanel(columns, "DockSlot", new Vector2(96f, 96f), theme.DockSlot);
                 SetAnchored(slot, new Vector2(x, 0f));
                 ApplyOutline(slot, ColorWithAlpha(theme.Border, 0.5f), 1f);
 
                 if (state.ShooterColumns[i].Count == 0)
                 {
-                    AddText(slot, "-", 20, FontStyle.Bold, theme.SubtleText, Vector2.zero, new Vector2(80f, 80f));
+                    AddText(slot, "-", 20, FontStyle.Bold, theme.SubtleText, Vector2.zero, new Vector2(96f, 96f));
                     continue;
                 }
 
                 Shooter front = state.ShooterColumns[i][0];
-                AddShooterButton(slot, front, Vector2.zero, Vector2.one * 58f, () => FireColumn(column));
+                AddShooterButton(slot, front, Vector2.zero, Vector2.one * 74f, () => FireColumn(column));
             }
         }
 
@@ -462,7 +462,7 @@ namespace SquareFlow.UI
             CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080f, 1920f);
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.matchWidthOrHeight = 0.35f;
 
             root = canvasObject.GetComponent<RectTransform>();
             root.anchorMin = Vector2.zero;
@@ -799,19 +799,18 @@ namespace SquareFlow.UI
 
         public static SquareFlowGameplayScreenLayout Create(BoardLayout board)
         {
-            Vector2 boardPosition = new Vector2(-96f, 76f);
-            Vector2 hudSize = new Vector2(1036f, 122f);
-            Vector2 queueSize = new Vector2(154f, 500f);
-            Vector2 dockSize = new Vector2(1036f, 128f);
+            Vector2 hudSize = new Vector2(1000f, 122f);
+            Vector2 queueSize = new Vector2(154f, 430f);
+            Vector2 dockSize = new Vector2(1000f, 150f);
             return new SquareFlowGameplayScreenLayout(
-                new Vector2(0f, 520f),
+                new Vector2(0f, 804f),
                 hudSize,
-                boardPosition,
-                new Vector2(boardPosition.x + board.CanvasWidth * 0.5f + 178f, boardPosition.y),
+                Vector2.zero,
+                new Vector2(392f, 64f),
                 queueSize,
-                new Vector2(0f, boardPosition.y - board.CanvasHeight * 0.5f - 112f),
+                new Vector2(0f, -704f),
                 dockSize,
-                new Vector2(66f, 66f));
+                new Vector2(74f, 74f));
         }
     }
 }
