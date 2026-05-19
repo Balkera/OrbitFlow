@@ -75,6 +75,24 @@ namespace SquareFlow.Tests
                 FireSide.Left,
                 2,
                 -1);
+
+            AssertFirePointMatchesExactLane(
+                board,
+                world,
+                boardCenter,
+                scale,
+                new GameEvent(
+                    GameEventType.BlockDestroyed,
+                    row: 0,
+                    col: 2,
+                    orbiterId: "o1",
+                    score: 100,
+                    fireSide: FireSide.Top,
+                    fireRow: -1,
+                    fireCol: 1),
+                FireSide.Top,
+                -1,
+                1);
         }
 
         [Test]
