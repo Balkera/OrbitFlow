@@ -237,7 +237,7 @@ namespace SquareFlow.UI
             bool fired = rules.FireFromColumn(column);
             PlayTone(fired ? 660f : 140f, fired ? 0.06f : 0.1f, 0.16f);
             RefreshGameView();
-            if (fired)
+            if (state != null)
                 seenEventCount = state.Events.Count;
         }
 
@@ -247,7 +247,7 @@ namespace SquareFlow.UI
             bool fired = rules.FireFromWaiting(index);
             PlayTone(fired ? 740f : 140f, fired ? 0.06f : 0.1f, 0.16f);
             RefreshGameView();
-            if (fired)
+            if (state != null)
                 seenEventCount = state.Events.Count;
         }
 
@@ -475,9 +475,24 @@ namespace SquareFlow.UI
 
         private void BuildWorldRenderer()
         {
-            GameObject cameraObject = new GameObject("SquareFlowWorldCamera", typeof(Camera), typeof(MobileCameraController));
-            cameraObject.transform.SetParent(transform, false);
+            Camera existingCamera = Camera.main;
+            bool createdCamera = existingCamera == null;
+            GameObject cameraObject = createdCamera
+                ? new GameObject("SquareFlowWorldCamera", typeof(Camera))
+                : existingCamera.gameObject;
+
+            if (createdCamera)
+            {
+                cameraObject.tag = "MainCamera";
+                cameraObject.transform.SetParent(transform, false);
+            }
+
+            if (cameraObject.GetComponent<Camera>() == null)
+                cameraObject.AddComponent<Camera>();
+
             mobileCamera = cameraObject.GetComponent<MobileCameraController>();
+            if (mobileCamera == null)
+                mobileCamera = cameraObject.AddComponent<MobileCameraController>();
 
             worldRoot = new GameObject("SquareFlowWorld");
             worldRoot.transform.SetParent(transform, false);
