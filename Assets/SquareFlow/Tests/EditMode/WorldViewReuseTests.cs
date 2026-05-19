@@ -66,6 +66,101 @@ namespace SquareFlow.Tests
             }
         }
 
+        [Test]
+        public void BoardWorldViewRebuildsWhenSameSizedShapeMovesActiveCells()
+        {
+            GameObject host = new GameObject("BoardWorldViewHost");
+            try
+            {
+                BoardWorldView view = host.AddComponent<BoardWorldView>();
+                BoardShape diagonalShape = new BoardShape("Diagonal", BoardShape.Mask(new[] { 1, 0 }, new[] { 0, 1 }));
+                BoardShape antiDiagonalShape = new BoardShape("AntiDiagonal", BoardShape.Mask(new[] { 0, 1 }, new[] { 1, 0 }));
+                BoardCell[,] grid =
+                {
+                    { BoardCell.Normal(FlowColor.Red, 1), BoardCell.Normal(FlowColor.Blue, 1) },
+                    { BoardCell.Normal(FlowColor.Green, 1), BoardCell.Normal(FlowColor.Yellow, 1) }
+                };
+                BoardLayout board = BoardLayout.Compute(2, 2, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+
+                view.Bind(GameState.Create(diagonalShape, grid, EmptyColumns(), 1), board, world, theme);
+                view.Bind(GameState.Create(antiDiagonalShape, grid, EmptyColumns(), 1), board, world, theme);
+
+                Assert.That(host.transform.childCount, Is.EqualTo(antiDiagonalShape.ActiveCellCount()));
+                Assert.That(HasChildNamed(host.transform, "WorldCell_0_1"), Is.True);
+                Assert.That(HasChildNamed(host.transform, "WorldCell_1_0"), Is.True);
+                Assert.That(HasChildNamed(host.transform, "WorldCell_0_0"), Is.False);
+                Assert.That(HasChildNamed(host.transform, "WorldCell_1_1"), Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void BoardWorldViewUsesBackToFrontSortingOrders()
+        {
+            GameObject host = new GameObject("BoardWorldViewHost");
+            try
+            {
+                BoardWorldView view = host.AddComponent<BoardWorldView>();
+                BoardShape shape = new BoardShape("One", BoardShape.Mask(new[] { 1 }));
+                BoardCell[,] grid = { { BoardCell.Normal(FlowColor.Red, 1) } };
+                BoardLayout board = BoardLayout.Compute(1, 1, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+
+                view.Bind(GameState.Create(shape, grid, EmptyColumns(), 1), board, world, theme);
+                Transform cell = host.transform.GetChild(0);
+
+                Assert.That(cell.Find("Depth").GetComponent<SpriteRenderer>().sortingOrder, Is.EqualTo(0));
+                Assert.That(cell.Find("Face").GetComponent<SpriteRenderer>().sortingOrder, Is.EqualTo(1));
+                Assert.That(cell.Find("Highlight").GetComponent<SpriteRenderer>().sortingOrder, Is.EqualTo(2));
+                Assert.That(cell.Find("Label").GetComponent<MeshRenderer>().sortingOrder, Is.EqualTo(7));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void OrbitRingWorldViewReusesSegmentsForSameLayout()
+        {
+            GameObject host = new GameObject("OrbitRingWorldViewHost");
+            try
+            {
+                OrbitRingWorldView view = host.AddComponent<OrbitRingWorldView>();
+                BoardLayout board = BoardLayout.Compute(2, 2, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+
+                view.Bind(board, world, theme);
+                int childrenAfterBind = host.transform.childCount;
+                Transform firstSegment = host.transform.GetChild(0);
+
+                view.Bind(board, world, theme);
+
+                Assert.That(host.transform.childCount, Is.EqualTo(childrenAfterBind));
+                Assert.That(host.transform.GetChild(0), Is.SameAs(firstSegment));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        private static bool HasChildNamed(Transform parent, string name)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+                if (parent.GetChild(i).name == name)
+                    return true;
+
+            return false;
+        }
+
         private static List<Shooter>[] EmptyColumns()
         {
             return new[] { new List<Shooter>(), new List<Shooter>(), new List<Shooter>() };

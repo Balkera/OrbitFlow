@@ -7,8 +7,14 @@ namespace SquareFlow.Runtime
 {
     public sealed class BoardWorldView : MonoBehaviour
     {
+        private const int DepthSortingOrder = 0;
+        private const int FaceSortingOrder = 1;
+        private const int HighlightSortingOrder = 2;
+        private const int LabelSortingOrder = 7;
+
         private readonly List<CellView> cells = new List<CellView>();
         private BoardShape boundShape;
+        private string boundActiveMaskSignature;
         private BoardLayout boundBoard;
         private MobileWorldLayout boundWorld;
 
@@ -20,16 +26,19 @@ namespace SquareFlow.Runtime
                 return;
             }
 
+            string activeMaskSignature = ActiveMaskSignature(state.Shape);
             bool needsRebuild = boundShape == null
                 || boundShape.Rows != state.Shape.Rows
                 || boundShape.Cols != state.Shape.Cols
                 || cells.Count != state.Shape.ActiveCellCount()
+                || boundActiveMaskSignature != activeMaskSignature
                 || cells.Count == 0;
 
             if (needsRebuild)
                 Rebuild(state);
 
             boundShape = state.Shape;
+            boundActiveMaskSignature = activeMaskSignature;
             boundBoard = board;
             boundWorld = world;
             RefreshCells(state, theme);
@@ -72,6 +81,7 @@ namespace SquareFlow.Runtime
 
             cells.Clear();
             boundShape = null;
+            boundActiveMaskSignature = null;
             boundBoard = null;
             boundWorld = default;
         }
@@ -83,6 +93,7 @@ namespace SquareFlow.Runtime
 
             cells.Clear();
             boundShape = state.Shape;
+            boundActiveMaskSignature = ActiveMaskSignature(state.Shape);
 
             for (int r = 0; r < state.Shape.Rows; r++)
             for (int c = 0; c < state.Shape.Cols; c++)
@@ -97,9 +108,9 @@ namespace SquareFlow.Runtime
             GameObject root = new GameObject("WorldCell_" + row + "_" + col);
             root.transform.SetParent(transform, false);
 
-            SpriteRenderer depth = CreateRenderer(root.transform, "Depth", SquareFlowWorldSprites.RoundedRect, 2);
-            SpriteRenderer face = CreateRenderer(root.transform, "Face", SquareFlowWorldSprites.RoundedRect, 1);
-            SpriteRenderer highlight = CreateRenderer(root.transform, "Highlight", SquareFlowWorldSprites.Square, 0);
+            SpriteRenderer depth = CreateRenderer(root.transform, "Depth", SquareFlowWorldSprites.RoundedRect, DepthSortingOrder);
+            SpriteRenderer face = CreateRenderer(root.transform, "Face", SquareFlowWorldSprites.RoundedRect, FaceSortingOrder);
+            SpriteRenderer highlight = CreateRenderer(root.transform, "Highlight", SquareFlowWorldSprites.Square, HighlightSortingOrder);
             TextMesh label = CreateLabel(root.transform);
 
             return new CellView(row, col, root, depth, face, highlight, label);
@@ -124,8 +135,19 @@ namespace SquareFlow.Runtime
             label.alignment = TextAlignment.Center;
             label.fontSize = 64;
             MeshRenderer renderer = label.GetComponent<MeshRenderer>();
-            renderer.sortingOrder = 7;
+            renderer.sortingOrder = LabelSortingOrder;
             return label;
+        }
+
+        private static string ActiveMaskSignature(BoardShape shape)
+        {
+            char[] signature = new char[shape.Rows * shape.Cols];
+            int index = 0;
+            for (int r = 0; r < shape.Rows; r++)
+            for (int c = 0; c < shape.Cols; c++)
+                signature[index++] = shape.IsActive(r, c) ? '1' : '0';
+
+            return new string(signature);
         }
 
         private static Color CellColor(BoardCell cell, SquareFlowTheme theme)
@@ -170,8 +192,12 @@ namespace SquareFlow.Runtime
 
         private static void DestroyImmediateOrRuntime(GameObject go)
         {
+            go.SetActive(false);
             if (Application.isPlaying)
+            {
+                go.transform.SetParent(null, false);
                 Destroy(go);
+            }
             else
                 DestroyImmediate(go);
         }
