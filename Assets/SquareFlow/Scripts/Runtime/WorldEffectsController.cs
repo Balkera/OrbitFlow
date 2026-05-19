@@ -119,6 +119,11 @@ namespace SquareFlow.Runtime
                 circlePool.Enqueue(renderer);
         }
 
+        private void OnDisable()
+        {
+            Clear();
+        }
+
         private static float EaseOut(float t)
         {
             float inverse = 1f - Mathf.Clamp01(t);

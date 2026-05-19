@@ -8,6 +8,7 @@ namespace SquareFlow.Runtime
     public sealed class OrbiterWorldView : MonoBehaviour
     {
         private readonly Dictionary<string, OrbiterView> active = new Dictionary<string, OrbiterView>();
+        private readonly Queue<OrbiterView> inactive = new Queue<OrbiterView>();
         private readonly List<string> missing = new List<string>();
 
         public void Refresh(List<ActiveOrbiter> orbiters, MobileWorldLayout world, SquareFlowTheme theme)
@@ -23,7 +24,7 @@ namespace SquareFlow.Runtime
 
                 if (!active.TryGetValue(orbiter.Id, out OrbiterView view))
                 {
-                    view = CreateOrbiter(orbiter.Id);
+                    view = TakeOrbiter(orbiter.Id);
                     active.Add(orbiter.Id, view);
                 }
 
@@ -38,7 +39,7 @@ namespace SquareFlow.Runtime
             }
 
             for (int i = 0; i < missing.Count; i++)
-                active[missing[i]].Root.SetActive(false);
+                Release(missing[i]);
         }
 
         public bool TryGetColor(string orbiterId, out Color color)
@@ -55,18 +56,37 @@ namespace SquareFlow.Runtime
 
         public void Clear()
         {
-            foreach (OrbiterView view in active.Values)
-                view.Root.SetActive(false);
+            missing.Clear();
+            foreach (string id in active.Keys)
+                missing.Add(id);
+
+            for (int i = 0; i < missing.Count; i++)
+                Release(missing[i]);
         }
 
-        private OrbiterView CreateOrbiter(string id)
+        private OrbiterView TakeOrbiter(string id)
         {
-            GameObject root = new GameObject("WorldOrbiter_" + id);
+            OrbiterView view = inactive.Count > 0 ? inactive.Dequeue() : CreateOrbiter();
+            view.Root.name = "WorldOrbiter_" + id;
+            return view;
+        }
+
+        private OrbiterView CreateOrbiter()
+        {
+            GameObject root = new GameObject("WorldOrbiter");
             root.transform.SetParent(transform, false);
 
             SpriteRenderer glow = CreateRenderer(root.transform, "Glow", SquareFlowWorldSprites.Glow, 5);
             SpriteRenderer token = CreateRenderer(root.transform, "Token", SquareFlowWorldSprites.Circle, 6);
             return new OrbiterView(root, glow, token);
+        }
+
+        private void Release(string id)
+        {
+            OrbiterView view = active[id];
+            active.Remove(id);
+            view.Root.SetActive(false);
+            inactive.Enqueue(view);
         }
 
         private static SpriteRenderer CreateRenderer(Transform parent, string name, Sprite sprite, int order)

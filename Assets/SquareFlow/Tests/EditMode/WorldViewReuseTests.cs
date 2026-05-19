@@ -183,6 +183,39 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void OrbiterWorldViewReusesReleasedObjectForDifferentOrbiterId()
+        {
+            GameObject host = new GameObject("OrbiterWorldViewHost");
+            try
+            {
+                OrbiterWorldView view = host.AddComponent<OrbiterWorldView>();
+                BoardLayout board = BoardLayout.Compute(1, 1, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+                List<ActiveOrbiter> orbiters = new List<ActiveOrbiter>
+                {
+                    new ActiveOrbiter(new Shooter("first-id", FlowColor.Red, 1, false))
+                };
+
+                view.Refresh(orbiters, world, theme);
+                Transform first = host.transform.GetChild(0);
+                orbiters.Clear();
+                view.Refresh(orbiters, world, theme);
+                orbiters.Add(new ActiveOrbiter(new Shooter("second-id", FlowColor.Blue, 1, false)));
+                view.Refresh(orbiters, world, theme);
+
+                Assert.That(host.transform.childCount, Is.EqualTo(1));
+                Assert.That(host.transform.GetChild(0), Is.SameAs(first));
+                Assert.That(first.name, Is.EqualTo("WorldOrbiter_second-id"));
+                Assert.That(first.gameObject.activeSelf, Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void WorldEffectsControllerResetsRendererWhenReusingCirclePool()
         {
             GameObject host = new GameObject("WorldEffectsHost");
