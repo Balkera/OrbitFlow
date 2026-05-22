@@ -19,6 +19,22 @@ namespace SquareFlow.Runtime
             }
         }
 
+        public Rect VisibleWorldRect
+        {
+            get
+            {
+                Camera camera = Camera;
+                float halfHeight = camera.orthographicSize;
+                float halfWidth = halfHeight * camera.aspect;
+                Vector3 position = camera.transform.position;
+                return Rect.MinMaxRect(
+                    position.x - halfWidth,
+                    position.y - halfHeight,
+                    position.x + halfWidth,
+                    position.y + halfHeight);
+            }
+        }
+
         public void Configure(Color background)
         {
             Camera.orthographic = true;

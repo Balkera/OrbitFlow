@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using SquareFlow.Core;
 using SquareFlow.UI;
 using UnityEngine;
@@ -7,60 +6,67 @@ namespace SquareFlow.Runtime
 {
     public sealed class OrbitRingWorldView : MonoBehaviour
     {
-        private readonly List<SpriteRenderer> segments = new List<SpriteRenderer>();
+        private LineRenderer ring;
+        private Material ringMaterial;
+
+        private void OnDestroy()
+        {
+            if (ringMaterial == null) return;
+
+            if (Application.isPlaying)
+                Destroy(ringMaterial);
+            else
+                DestroyImmediate(ringMaterial);
+        }
 
         public void Bind(BoardLayout board, MobileWorldLayout world, SquareFlowTheme theme)
         {
             if (board == null || !world.IsValid)
             {
-                SetActiveCount(0);
+                if (ring != null)
+                    ring.gameObject.SetActive(false);
                 return;
             }
 
-            float segmentLengthLayout = Mathf.Max(12f, board.Cell * SquareFlowVisualMetrics.OrbitLineSegmentLengthScale);
-            float spacingLayout = segmentLengthLayout * SquareFlowVisualMetrics.OrbitLineSegmentSpacingMultiplier;
-            float segmentLengthWorld = segmentLengthLayout * world.WorldUnitsPerLayoutPixel;
-            int count = Mathf.Max(96, Mathf.CeilToInt(board.Perimeter / Mathf.Max(1f, spacingLayout)));
-            SetActiveCount(count);
+            EnsureRing();
+
+            int count = SquareFlowVisualMetrics.OrbitRingPointCount;
+            ring.gameObject.SetActive(true);
+            ring.positionCount = count;
+            ring.loop = true;
+            ring.useWorldSpace = true;
+            ring.startWidth = Mathf.Max(0.035f, board.Cell * SquareFlowVisualMetrics.OrbitRingThicknessScale * world.WorldUnitsPerLayoutPixel);
+            ring.endWidth = ring.startWidth;
+            ring.startColor = ColorWithAlpha(theme.Score, 0.86f);
+            ring.endColor = ring.startColor;
+            ring.numCapVertices = 6;
+            ring.numCornerVertices = 6;
+            ring.sortingOrder = -1;
 
             for (int i = 0; i < count; i++)
             {
                 float distance = board.Perimeter * i / count;
                 Vector2 position = world.PathPosition(distance);
-                Vector2 before = world.PathPosition(distance - spacingLayout * 0.45f);
-                Vector2 after = world.PathPosition(distance + spacingLayout * 0.45f);
-                float angle = Mathf.Atan2(after.y - before.y, after.x - before.x) * Mathf.Rad2Deg;
-
-                SpriteRenderer renderer = segments[i];
-                renderer.color = ColorWithAlpha(theme.Score, 0.62f);
-                renderer.transform.position = new Vector3(position.x, position.y, 0.2f);
-                renderer.transform.rotation = Quaternion.Euler(0f, 0f, angle);
-                renderer.transform.localScale = new Vector3(segmentLengthWorld, Mathf.Max(0.035f, board.Cell * SquareFlowVisualMetrics.OrbitLineSegmentThicknessScale * world.WorldUnitsPerLayoutPixel), 1f);
+                ring.SetPosition(i, new Vector3(position.x, position.y, 0.2f));
             }
         }
 
         public void Clear()
         {
-            SetActiveCount(0);
+            if (ring != null)
+                ring.gameObject.SetActive(false);
         }
 
-        private void SetActiveCount(int count)
+        private void EnsureRing()
         {
-            while (segments.Count < count)
-                segments.Add(CreateSegment());
+            if (ring != null) return;
 
-            for (int i = 0; i < segments.Count; i++)
-                segments[i].gameObject.SetActive(i < count);
-        }
-
-        private SpriteRenderer CreateSegment()
-        {
-            GameObject go = new GameObject("OrbitSegment");
+            GameObject go = new GameObject("OrbitRing");
             go.transform.SetParent(transform, false);
-            SpriteRenderer renderer = go.AddComponent<SpriteRenderer>();
-            renderer.sprite = SquareFlowWorldSprites.Square;
-            renderer.sortingOrder = -1;
-            return renderer;
+            ring = go.AddComponent<LineRenderer>();
+            ringMaterial = new Material(Shader.Find("Sprites/Default"));
+            ringMaterial.name = "SquareFlowOrbitRingMaterial";
+            ring.sharedMaterial = ringMaterial;
         }
 
         private static Color ColorWithAlpha(Color color, float alpha)

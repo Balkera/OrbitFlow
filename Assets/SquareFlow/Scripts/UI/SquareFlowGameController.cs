@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using TMPro;
 using SquareFlow.Core;
 using SquareFlow.Effects;
 using SquareFlow.Runtime;
@@ -15,17 +16,22 @@ namespace SquareFlow.UI
     [RequireComponent(typeof(SquareFlowAudio))]
     public sealed class SquareFlowGameController : MonoBehaviour
     {
+        private const float ReferenceCanvasWidth = 1080f;
+        private const float ReferenceCanvasHeight = 1920f;
+        private const float ShooterColumnSpacing = 118f;
+        private const float ShooterRowSpacing = 96f;
+        private const float WaitingQueueSpacing = 96f;
+
         private readonly List<GameObject> dynamicObjects = new List<GameObject>();
         private SaveDataService saveData;
         private SquareFlowAudio audioCue;
         private SquareFlowTheme theme;
         private RectTransform root;
-        private Font font;
         private GameState state;
         private GameRules rules;
         private BoardLayout layout;
-        private Text hudText;
-        private Text comboText;
+        private TMP_Text hudText;
+        private TMP_Text comboText;
         private Sprite roundedRectSprite;
         private Sprite circleSprite;
         private int seenEventCount;
@@ -44,7 +50,6 @@ namespace SquareFlow.UI
             saveData = new SaveDataService();
             audioCue = GetComponent<SquareFlowAudio>();
             theme = new SquareFlowTheme(saveData.DarkMode);
-            font = LoadFont();
             EnsureRuntimeSprites();
             EnsureEventSystem();
             BuildCanvas();
@@ -67,13 +72,25 @@ namespace SquareFlow.UI
             if (events.Count == 0 && state.Events.Count == seenEventCount)
             {
                 if (worldRoot != null && worldRoot.activeSelf)
+                {
+                    bool worldLayoutChanged = UpdateWorldLayout();
+                    if (worldLayoutChanged)
+                    {
+                        boardWorldView.Bind(state, layout, worldLayout, theme);
+                        orbitRingWorldView.Bind(layout, worldLayout, theme);
+                    }
+
                     orbiterWorldView.Refresh(state.ActiveOrbiters, worldLayout, theme);
+                }
                 return;
             }
 
             seenEventCount = state.Events.Count;
             PlayEvents(events);
-            RefreshGameView();
+            if (SquareFlowGameViewRefreshPolicy.NeedsFullRefresh(events))
+                RefreshGameView();
+            else
+                RefreshWorldGameplay();
 
             if (state.Result != seenResult)
                 ShowResultPanel();
@@ -102,26 +119,29 @@ namespace SquareFlow.UI
             Image background = root.GetComponent<Image>();
             background.color = theme.Background;
 
-            RectTransform panel = AddPanel(root, "MenuPanel", new Vector2(620f, 820f), theme.Panel);
-            SetAnchored(panel, Vector2.zero);
+            RectTransform panel = AddPanel(root, "MenuPanel", Vector2.zero, theme.Panel, null);
+            SetStretch(panel);
 
-            AddText(panel, "Square Flow", 44, FontStyle.Bold, theme.Text, new Vector2(0f, 350f), new Vector2(540f, 64f));
+            RectTransform content = AddContainer(panel, "MenuContent", new Vector2(900f, 1500f));
+            SetAnchored(content, Vector2.zero);
+
+            AddText(content, "Square Flow", 78, FontStyle.Bold, theme.Text, new Vector2(0f, 650f), new Vector2(840f, 112f));
             BoardShape shape = BoardShapeCatalog.GetShape(saveData.Level);
-            AddText(panel, "Level " + saveData.Level + " - " + shape.Name, 24, FontStyle.Bold, theme.Score, new Vector2(0f, 292f), new Vector2(540f, 44f));
-            AddText(panel, "Clear matching color blocks before your shooters run out. Bombs clear nearby cells, wild shooters hit anything, and unused ammo moves into the waiting queue.", 18, FontStyle.Normal, theme.SubtleText, new Vector2(0f, 228f), new Vector2(510f, 82f));
+            AddText(content, "Level " + saveData.Level + " - " + shape.Name, 36, FontStyle.Bold, theme.Score, new Vector2(0f, 550f), new Vector2(820f, 62f));
+            AddText(content, "Clear matching color blocks before your shooters run out. Bombs clear nearby cells, wild shooters hit anything, and unused ammo moves into the waiting queue.", 25, FontStyle.Normal, theme.SubtleText, new Vector2(0f, 430f), new Vector2(820f, 128f));
 
-            AddButton(panel, "Play", new Vector2(0f, 152f), new Vector2(300f, 54f), theme.Green, theme.Text, StartLevel);
-            AddButton(panel, saveData.DarkMode ? "Light" : "Dark", new Vector2(-82f, 82f), new Vector2(140f, 44f), theme.Blue, Color.white, ToggleTheme);
-            AddButton(panel, saveData.Muted ? "Sound" : "Mute", new Vector2(82f, 82f), new Vector2(140f, 44f), theme.Yellow, new Color32(26, 23, 64, 255), ToggleMute);
+            AddButton(content, "Play", new Vector2(0f, 260f), new Vector2(540f, 96f), theme.Green, theme.Text, StartLevel, 34);
+            AddButton(content, saveData.DarkMode ? "Light" : "Dark", new Vector2(-150f, 130f), new Vector2(260f, 76f), theme.Blue, Color.white, ToggleTheme, 28);
+            AddButton(content, saveData.Muted ? "Sound" : "Mute", new Vector2(150f, 130f), new Vector2(260f, 76f), theme.Yellow, new Color32(26, 23, 64, 255), ToggleMute, 28);
 
-            AddText(panel, "Select Level", 18, FontStyle.Bold, theme.Text, new Vector2(0f, 26f), new Vector2(220f, 30f));
-            RenderLevelSelector(panel);
+            AddText(content, "Select Level", 30, FontStyle.Bold, theme.Text, new Vector2(0f, 12f), new Vector2(360f, 50f));
+            RenderLevelSelector(content);
 
-            AddText(panel, "Leaderboard", 18, FontStyle.Bold, theme.Text, new Vector2(0f, -162f), new Vector2(220f, 30f));
-            RenderLeaderboard(panel);
+            AddText(content, "Leaderboard", 30, FontStyle.Bold, theme.Text, new Vector2(0f, -310f), new Vector2(360f, 50f));
+            RenderLeaderboard(content);
 
-            AddButton(panel, "Reset Progress", new Vector2(0f, -364f), new Vector2(300f, 36f), theme.Red, Color.white, ResetProgress);
-            AddText(panel, "Click a front shooter column or a waiting shooter to fire. Combo rises as blocks break quickly.", 14, FontStyle.Normal, theme.SubtleText, new Vector2(0f, -398f), new Vector2(510f, 24f));
+            AddButton(content, "Reset Progress", new Vector2(0f, -650f), new Vector2(500f, 66f), theme.Red, Color.white, ResetProgress, 24);
+            AddText(content, "Click a front shooter column or a waiting shooter to fire. Combo rises as blocks break quickly.", 20, FontStyle.Normal, theme.SubtleText, new Vector2(0f, -712f), new Vector2(820f, 44f));
         }
 
         private void StartLevel()
@@ -133,11 +153,11 @@ namespace SquareFlow.UI
             List<Shooter>[] columns = ShooterGenerator.BuildColumns(grid, shape, level, random);
 
             layout = BoardLayout.Compute(shape.Rows, shape.Cols, 860f);
-            worldLayout = MobileWorldLayout.Create(layout);
-            if (worldRoot != null)
-                worldRoot.SetActive(true);
             if (mobileCamera != null)
                 mobileCamera.Configure(theme.Background);
+            UpdateWorldLayout();
+            if (worldRoot != null)
+                worldRoot.SetActive(true);
             state = GameState.Create(shape, grid, columns, level);
             rules = new GameRules(state, layout);
             seenEventCount = 0;
@@ -159,15 +179,19 @@ namespace SquareFlow.UI
 
             SquareFlowGameplayScreenLayout screen = SquareFlowGameplayScreenLayout.Create(layout);
 
-            RectTransform hud = AddPanel(root, "Hud", screen.HudSize, theme.Panel);
+            RectTransform hud = AddPanel(root, "Hud", screen.HudSize, ColorWithAlpha(theme.Panel, 0.94f));
             SetAnchored(hud, screen.HudPosition);
             ApplyOutline(hud, ColorWithAlpha(theme.Border, 0.55f), 1f);
-            AddText(hud, "LEVEL " + state.Level.ToString("00", CultureInfo.InvariantCulture), 17, FontStyle.Bold, theme.SubtleText, new Vector2(-456f, 30f), new Vector2(180f, 30f), TextAnchor.MiddleLeft);
-            hudText = AddText(hud, string.Empty, 40, FontStyle.Bold, theme.Score, new Vector2(-456f, -18f), new Vector2(220f, 56f), TextAnchor.MiddleLeft);
-            comboText = AddText(hud, string.Empty, 15, FontStyle.Bold, theme.SubtleText, new Vector2(-246f, -18f), new Vector2(360f, 34f), TextAnchor.MiddleLeft);
-            AddButton(hud, "II", new Vector2(300f, 0f), screen.UtilityButtonSize, theme.Button, theme.Text, ShowMenu);
-            AddButton(hud, "R", new Vector2(382f, 0f), screen.UtilityButtonSize, theme.Button, theme.Text, StartLevel);
-            AddButton(hud, "S", new Vector2(464f, 0f), screen.UtilityButtonSize, theme.Button, theme.Text, ToggleMuteInGame);
+            AddText(hud, "LEVEL " + state.Level.ToString("00", CultureInfo.InvariantCulture), 14, FontStyle.Bold, theme.SubtleText, new Vector2(-130f, 30f), new Vector2(220f, 26f), TextAnchor.MiddleLeft);
+            hudText = AddText(hud, string.Empty, 38, FontStyle.Bold, theme.Score, new Vector2(-130f, -16f), new Vector2(220f, 58f), TextAnchor.MiddleLeft);
+            comboText = AddText(hud, string.Empty, 16, FontStyle.Bold, theme.SubtleText, new Vector2(136f, -8f), new Vector2(220f, 42f), TextAnchor.MiddleRight);
+
+            RectTransform actions = AddPanel(root, "HudActions", screen.ActionSize, ColorWithAlpha(theme.Panel, 0.9f));
+            SetAnchored(actions, screen.ActionPosition);
+            ApplyOutline(actions, ColorWithAlpha(theme.Border, 0.5f), 1f);
+            AddButton(actions, "II", new Vector2(-84f, 0f), screen.UtilityButtonSize, theme.Button, theme.Text, ShowMenu);
+            AddButton(actions, "R", Vector2.zero, screen.UtilityButtonSize, theme.Button, theme.Text, StartLevel);
+            AddButton(actions, "S", new Vector2(84f, 0f), screen.UtilityButtonSize, theme.Button, theme.Text, ToggleMuteInGame);
 
             RefreshWorldGameplay();
 
@@ -188,52 +212,102 @@ namespace SquareFlow.UI
 
         private void RefreshWorldGameplay()
         {
-            if (state == null || layout == null || !worldLayout.IsValid || worldRoot == null) return;
+            if (state == null || layout == null || worldRoot == null) return;
 
+            UpdateWorldLayout();
+            if (!worldLayout.IsValid) return;
             worldRoot.SetActive(true);
             boardWorldView.Bind(state, layout, worldLayout, theme);
             orbitRingWorldView.Bind(layout, worldLayout, theme);
             orbiterWorldView.Refresh(state.ActiveOrbiters, worldLayout, theme);
         }
 
+        private bool UpdateWorldLayout()
+        {
+            if (layout == null)
+            {
+                bool hadLayout = worldLayout.IsValid;
+                worldLayout = default;
+                return hadLayout;
+            }
+
+            MobileWorldLayout next = mobileCamera != null
+                ? MobileWorldLayout.Create(layout, mobileCamera.VisibleWorldRect)
+                : MobileWorldLayout.Create(layout);
+            bool changed = !worldLayout.IsValid
+                || (worldLayout.BoardCenter - next.BoardCenter).sqrMagnitude > 0.0001f
+                || Mathf.Abs(worldLayout.WorldUnitsPerLayoutPixel - next.WorldUnitsPerLayoutPixel) > 0.0001f;
+            worldLayout = next;
+            return changed;
+        }
+
         private void RenderWaiting(RectTransform queue)
         {
-            float startY = (state.WaitingQueue.Count - 1) * 44f;
+            int capacity = SquareFlowConstants.WaitQueueLimit;
+            float startY = WaitingQueueStartY(capacity);
+
+            for (int i = 0; i < capacity; i++)
+            {
+                Vector2 position = new Vector2(0f, startY - i * WaitingQueueSpacing);
+                RectTransform slot = AddPanel(queue, "WaitingSlot", Vector2.one * 78f, ColorWithAlpha(theme.DockSlot, 0.78f), circleSprite);
+                SetAnchored(slot, position);
+                ApplyOutline(slot, ColorWithAlpha(theme.Border, 0.42f), 1f);
+            }
+
             for (int i = 0; i < state.WaitingQueue.Count; i++)
             {
                 int index = i;
                 Shooter shooter = state.WaitingQueue[i];
-                AddShooterButton(queue, shooter, new Vector2(0f, startY - i * 88f), Vector2.one * 74f, () => FireWaiting(index));
+                AddShooterButton(queue, shooter, new Vector2(0f, startY - i * WaitingQueueSpacing), Vector2.one * 70f, () => FireWaiting(index));
             }
         }
 
         private void RenderColumns(RectTransform columns)
         {
-            float spacing = 104f;
-            float startX = -spacing * (state.ShooterColumns.Length - 1) * 0.5f;
+            const float slotSize = 78f;
+            int visibleRows = SquareFlowGameplayScreenLayout.ShooterColumnVisibleRows;
+            float startX = ShooterColumnsStartX(state.ShooterColumns.Length);
+            float startY = ShooterColumnsStartY(visibleRows);
+
             for (int i = 0; i < state.ShooterColumns.Length; i++)
             {
                 int column = i;
-                float x = startX + i * spacing;
-                RectTransform slot = AddPanel(columns, "DockSlot", new Vector2(96f, 96f), theme.DockSlot);
-                SetAnchored(slot, new Vector2(x, 0f));
-                ApplyOutline(slot, ColorWithAlpha(theme.Border, 0.5f), 1f);
+                float x = startX + i * ShooterColumnSpacing;
+                List<Shooter> shooterColumn = state.ShooterColumns[i];
 
-                if (state.ShooterColumns[i].Count == 0)
+                for (int row = 0; row < visibleRows; row++)
                 {
-                    AddText(slot, "-", 20, FontStyle.Bold, theme.SubtleText, Vector2.zero, new Vector2(96f, 96f));
-                    continue;
-                }
+                    bool frontRow = row == 0;
+                    Vector2 position = new Vector2(x, startY - row * ShooterRowSpacing);
+                    RectTransform slot = AddPanel(columns, frontRow ? "DockSlotFront" : "DockSlotQueued", Vector2.one * slotSize, ColorWithAlpha(theme.DockSlot, frontRow ? 0.94f : 0.58f));
+                    SetAnchored(slot, position);
+                    if (frontRow)
+                        slot.localScale = Vector3.one * SquareFlowVisualMetrics.DockSlotFrontScale;
+                    ApplyOutline(slot, ColorWithAlpha(theme.Border, frontRow ? 0.55f : 0.32f), 1f);
 
-                Shooter front = state.ShooterColumns[i][0];
-                AddShooterButton(slot, front, Vector2.zero, Vector2.one * 74f, () => FireColumn(column));
+                    if (row >= shooterColumn.Count)
+                    {
+                        if (frontRow)
+                            AddText(slot, "-", 18, FontStyle.Bold, theme.SubtleText, Vector2.zero, Vector2.one * slotSize);
+                        continue;
+                    }
+
+                    Shooter shooter = shooterColumn[row];
+                    if (frontRow)
+                        AddShooterButton(slot, shooter, Vector2.zero, Vector2.one * 68f, () => FireColumn(column));
+                    else
+                        AddShooterToken(slot, shooter, Vector2.zero, Vector2.one * 58f, false, null);
+                }
             }
         }
 
         private void FireColumn(int column)
         {
             if (rules == null) return;
+            string orbiterId = TryGetColumnShooterId(column);
             bool fired = rules.FireFromColumn(column);
+            if (fired)
+                RegisterColumnLaunch(orbiterId, column);
             PlayTone(fired ? 660f : 140f, fired ? 0.06f : 0.1f, 0.16f);
             RefreshGameView();
             if (state != null)
@@ -243,11 +317,76 @@ namespace SquareFlow.UI
         private void FireWaiting(int index)
         {
             if (rules == null) return;
+            string orbiterId = TryGetWaitingShooterId(index);
             bool fired = rules.FireFromWaiting(index);
+            if (fired)
+                RegisterWaitingLaunch(orbiterId, index);
             PlayTone(fired ? 740f : 140f, fired ? 0.06f : 0.1f, 0.16f);
             RefreshGameView();
             if (state != null)
                 seenEventCount = state.Events.Count;
+        }
+
+        private string TryGetColumnShooterId(int column)
+        {
+            if (state == null || column < 0 || column >= state.ShooterColumns.Length) return null;
+            List<Shooter> shooters = state.ShooterColumns[column];
+            return shooters.Count > 0 ? shooters[0].Id : null;
+        }
+
+        private string TryGetWaitingShooterId(int index)
+        {
+            if (state == null || index < 0 || index >= state.WaitingQueue.Count) return null;
+            return state.WaitingQueue[index].Id;
+        }
+
+        private void RegisterColumnLaunch(string orbiterId, int column)
+        {
+            if (string.IsNullOrEmpty(orbiterId) || orbiterWorldView == null || layout == null || state == null) return;
+            SquareFlowGameplayScreenLayout screen = SquareFlowGameplayScreenLayout.Create(layout);
+            Vector2 columnOffset = new Vector2(
+                ShooterColumnsStartX(state.ShooterColumns.Length) + column * ShooterColumnSpacing,
+                ShooterColumnsStartY(screen.DockVisibleRows));
+            Vector2 referencePosition = screen.DockPosition + columnOffset;
+            orbiterWorldView.RegisterLaunchSource(orbiterId, ReferenceCanvasToWorld(referencePosition));
+        }
+
+        private void RegisterWaitingLaunch(string orbiterId, int index)
+        {
+            if (string.IsNullOrEmpty(orbiterId) || orbiterWorldView == null || layout == null) return;
+            SquareFlowGameplayScreenLayout screen = SquareFlowGameplayScreenLayout.Create(layout);
+            Vector2 queueOffset = new Vector2(
+                0f,
+                WaitingQueueStartY(SquareFlowConstants.WaitQueueLimit) - index * WaitingQueueSpacing);
+            Vector2 referencePosition = screen.QueuePosition + queueOffset;
+            orbiterWorldView.RegisterLaunchSource(orbiterId, ReferenceCanvasToWorld(referencePosition));
+        }
+
+        private Vector2 ReferenceCanvasToWorld(Vector2 anchoredPosition)
+        {
+            Rect visible = mobileCamera != null
+                ? mobileCamera.VisibleWorldRect
+                : new Rect(-5.4f, -9.6f, ReferenceCanvasWidth * 0.01f, ReferenceCanvasHeight * 0.01f);
+            float viewportX = Mathf.Clamp01(0.5f + anchoredPosition.x / ReferenceCanvasWidth);
+            float viewportY = Mathf.Clamp01(0.5f + anchoredPosition.y / ReferenceCanvasHeight);
+            return new Vector2(
+                Mathf.Lerp(visible.xMin, visible.xMax, viewportX),
+                Mathf.Lerp(visible.yMin, visible.yMax, viewportY));
+        }
+
+        private static float ShooterColumnsStartX(int columnCount)
+        {
+            return -ShooterColumnSpacing * (columnCount - 1) * 0.5f;
+        }
+
+        private static float ShooterColumnsStartY(int visibleRows)
+        {
+            return (visibleRows - 1) * ShooterRowSpacing * 0.5f;
+        }
+
+        private static float WaitingQueueStartY(int capacity)
+        {
+            return (capacity - 1) * WaitingQueueSpacing * 0.5f;
         }
 
         private void ShowResultPanel()
@@ -295,12 +434,12 @@ namespace SquareFlow.UI
                 int level = i + 1;
                 int row = i / 5;
                 int col = i % 5;
-                float x = -208f + col * 104f;
-                float y = -22f - row * 54f;
+                float x = -320f + col * 160f;
+                float y = -92f - row * 88f;
                 bool selected = level == saveData.Level;
                 Color fill = selected ? theme.Green : completed.Contains(level) ? theme.Score : theme.Blue;
                 Color text = selected || completed.Contains(level) ? new Color32(26, 23, 64, 255) : Color.white;
-                AddButton(panel, level.ToString(), new Vector2(x, y), new Vector2(74f, 42f), fill, text, () => SelectLevel(level));
+                AddButton(panel, level.ToString(), new Vector2(x, y), new Vector2(120f, 68f), fill, text, () => SelectLevel(level), 30);
             }
         }
 
@@ -309,7 +448,7 @@ namespace SquareFlow.UI
             SaveDataService.ScoreEntry[] scores = saveData.Scores();
             if (scores.Length == 0)
             {
-                AddText(panel, "No scores yet", 15, FontStyle.Normal, theme.SubtleText, new Vector2(0f, -204f), new Vector2(500f, 26f));
+                AddText(panel, "No scores yet", 22, FontStyle.Normal, theme.SubtleText, new Vector2(0f, -365f), new Vector2(760f, 36f));
                 return;
             }
 
@@ -318,7 +457,7 @@ namespace SquareFlow.UI
             {
                 SaveDataService.ScoreEntry entry = scores[i];
                 string label = (i + 1) + ". L" + entry.Level + "  " + entry.Score + " pts  " + entry.Moves + " moves";
-                AddText(panel, label, 13, FontStyle.Normal, theme.SubtleText, new Vector2(0f, -184f - i * 17f), new Vector2(500f, 18f));
+                AddText(panel, label, 20, FontStyle.Normal, theme.SubtleText, new Vector2(0f, -360f - i * 26f), new Vector2(760f, 28f));
             }
         }
 
@@ -369,7 +508,10 @@ namespace SquareFlow.UI
 
             Vector2 end = worldLayout.EventTarget(gameEvent);
             Color color = ShotColor(gameEvent);
-            worldEffects.PlayShot(start, end, color, heavyImpact || gameEvent.Type == GameEventType.BombDetonated);
+            bool heavyCellImpact = heavyImpact || gameEvent.Type == GameEventType.BombDetonated;
+            worldEffects.PlayShot(start, end, color, heavyCellImpact);
+            if (boardWorldView != null)
+                boardWorldView.PlayHitFeedback(gameEvent.Row, gameEvent.Col, heavyCellImpact);
         }
 
         private Color ShotColor(GameEvent gameEvent)
@@ -543,9 +685,9 @@ namespace SquareFlow.UI
             return rect;
         }
 
-        private Text AddText(RectTransform parent, string value, int size, FontStyle style, Color color, Vector2 position, Vector2 dimensions, TextAnchor alignment = TextAnchor.MiddleCenter)
+        private TMP_Text AddText(RectTransform parent, string value, int size, FontStyle style, Color color, Vector2 position, Vector2 dimensions, TextAnchor alignment = TextAnchor.MiddleCenter)
         {
-            GameObject go = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            GameObject go = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
             go.transform.SetParent(parent, false);
             dynamicObjects.Add(go);
 
@@ -553,15 +695,15 @@ namespace SquareFlow.UI
             rect.sizeDelta = dimensions;
             SetAnchored(rect, position);
 
-            Text text = go.GetComponent<Text>();
-            text.font = font;
+            TMP_Text text = go.GetComponent<TMP_Text>();
             text.text = value;
             text.fontSize = size;
-            text.fontStyle = style;
+            text.fontStyle = ToTmpFontStyle(style);
             text.color = color;
-            text.alignment = alignment;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.alignment = ToTmpAlignment(alignment);
+            text.textWrappingMode = TextWrappingModes.Normal;
+            text.overflowMode = TextOverflowModes.Truncate;
+            text.raycastTarget = false;
             Shadow shadow = go.AddComponent<Shadow>();
             shadow.effectColor = ColorWithAlpha(Color.black, 0.45f);
             shadow.effectDistance = new Vector2(1.2f, -1.2f);
@@ -569,6 +711,11 @@ namespace SquareFlow.UI
         }
 
         private Button AddButton(RectTransform parent, string label, Vector2 position, Vector2 size, Color color, Color textColor, UnityEngine.Events.UnityAction action)
+        {
+            return AddButton(parent, label, position, size, color, textColor, action, 18);
+        }
+
+        private Button AddButton(RectTransform parent, string label, Vector2 position, Vector2 size, Color color, Color textColor, UnityEngine.Events.UnityAction action, int fontSize)
         {
             RectTransform rect = AddPanel(parent, "Button", size, color);
             SetAnchored(rect, position);
@@ -579,28 +726,89 @@ namespace SquareFlow.UI
             button.colors = ButtonColors(color);
             ApplyOutline(rect, ColorWithAlpha(Color.white, 0.26f), 1f);
 
-            Text text = AddText(rect, label, 18, FontStyle.Bold, textColor, Vector2.zero, size);
+            TMP_Text text = AddText(rect, label, fontSize, FontStyle.Bold, textColor, Vector2.zero, size);
             text.raycastTarget = false;
             return button;
         }
 
         private void AddShooterButton(RectTransform parent, Shooter shooter, Vector2 position, Vector2 size, UnityEngine.Events.UnityAction action)
         {
+            AddShooterToken(parent, shooter, position, size, true, action);
+        }
+
+        private void AddShooterToken(RectTransform parent, Shooter shooter, Vector2 position, Vector2 size, bool selectable, UnityEngine.Events.UnityAction action)
+        {
             Color fill = shooter.Hidden ? theme.SubtleText : ColorForShooter(shooter.Color, shooter.Wild);
+            if (!selectable)
+                fill = ColorWithAlpha(fill, shooter.Hidden ? 0.48f : 0.68f);
+
             Color textColor = shooter.Hidden || shooter.Wild || shooter.Color == FlowColor.Yellow ? new Color32(26, 23, 64, 255) : Color.white;
-            string label = shooter.Hidden ? "?" : shooter.Wild ? "*" : string.Empty;
-            Button button = AddButton(parent, label, position, size, fill, textColor, action);
-            Image image = button.targetGraphic as Image;
+            string label = shooter.Hidden ? "?" : Mathf.Max(0, shooter.Ammo).ToString(CultureInfo.InvariantCulture);
+            RectTransform rect = AddPanel(parent, selectable ? "ShooterButton" : "ShooterPreview", size, fill, circleSprite);
+            SetAnchored(rect, position);
+
+            Image image = rect.GetComponent<Image>();
             if (image != null)
             {
                 image.sprite = circleSprite;
                 image.type = Image.Type.Simple;
+                image.raycastTarget = selectable;
             }
+
             float diameter = Mathf.Min(size.x, size.y);
-            button.GetComponent<RectTransform>().sizeDelta = new Vector2(diameter, diameter);
-            Text text = button.GetComponentInChildren<Text>();
-            if (text != null)
-                text.rectTransform.sizeDelta = new Vector2(diameter, diameter);
+            rect.sizeDelta = new Vector2(diameter, diameter);
+            ApplyOutline(rect, ColorWithAlpha(Color.white, selectable ? 0.26f : 0.14f), 1f);
+            AddShooterAmmoDots(rect, shooter, diameter, fill, selectable);
+            AddShooterAmmoLabel(rect, label, diameter, textColor, selectable);
+
+            if (selectable)
+            {
+                Button button = rect.gameObject.AddComponent<Button>();
+                button.targetGraphic = image;
+                button.onClick.AddListener(action);
+                button.colors = ButtonColors(fill);
+            }
+        }
+
+        private TMP_Text AddShooterAmmoLabel(RectTransform token, string label, float diameter, Color textColor, bool selectable)
+        {
+            TMP_Text text = AddText(
+                token,
+                label,
+                selectable ? SquareFlowVisualMetrics.ShooterAmmoLabelFontSize : SquareFlowVisualMetrics.ShooterAmmoLabelQueuedFontSize,
+                FontStyle.Bold,
+                textColor,
+                Vector2.zero,
+                new Vector2(diameter, diameter));
+            text.gameObject.name = "AmmoLabel";
+            text.raycastTarget = false;
+            return text;
+        }
+
+        private void AddShooterAmmoDots(RectTransform token, Shooter shooter, float diameter, Color fill, bool selectable)
+        {
+            int count = Mathf.Max(0, shooter.Ammo);
+            if (shooter.Hidden || count == 0) return;
+
+            float rowWidth = Mathf.Max(diameter, SquareFlowVisualMetrics.ShooterAmmoDotDiameter + (count - 1) * SquareFlowVisualMetrics.ShooterAmmoDotSpacing);
+            RectTransform row = AddContainer(token, "AmmoDots", new Vector2(rowWidth, SquareFlowVisualMetrics.ShooterAmmoDotDiameter));
+            SetAnchored(row, new Vector2(0f, diameter * 0.5f + SquareFlowVisualMetrics.ShooterAmmoDotTopOffset));
+
+            float spacing = count > 1
+                ? Mathf.Min(SquareFlowVisualMetrics.ShooterAmmoDotSpacing, diameter * 0.82f / (count - 1))
+                : 0f;
+            float startX = -spacing * (count - 1) * 0.5f;
+            Color dotColor = ColorWithAlpha(Color.Lerp(fill, Color.white, 0.72f), selectable ? 0.96f : 0.72f);
+
+            for (int i = 0; i < count; i++)
+            {
+                RectTransform dot = AddPanel(row, "AmmoDot", Vector2.one * SquareFlowVisualMetrics.ShooterAmmoDotDiameter, dotColor, circleSprite);
+                SetAnchored(dot, new Vector2(startX + i * spacing, 0f));
+                Image image = dot.GetComponent<Image>();
+                if (image != null)
+                    image.raycastTarget = false;
+                ApplyOutline(dot, ColorWithAlpha(Color.black, selectable ? 0.22f : 0.14f), 0.7f);
+            }
         }
 
         private void ApplyOutline(RectTransform rect, Color color, float distance)
@@ -698,6 +906,57 @@ namespace SquareFlow.UI
             rect.anchoredPosition = position;
         }
 
+        private static void SetStretch(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = Vector2.zero;
+        }
+
+        private static FontStyles ToTmpFontStyle(FontStyle style)
+        {
+            switch (style)
+            {
+                case FontStyle.Bold:
+                    return FontStyles.Bold;
+                case FontStyle.Italic:
+                    return FontStyles.Italic;
+                case FontStyle.BoldAndItalic:
+                    return FontStyles.Bold | FontStyles.Italic;
+                default:
+                    return FontStyles.Normal;
+            }
+        }
+
+        private static TextAlignmentOptions ToTmpAlignment(TextAnchor alignment)
+        {
+            switch (alignment)
+            {
+                case TextAnchor.MiddleLeft:
+                    return TextAlignmentOptions.MidlineLeft;
+                case TextAnchor.MiddleRight:
+                    return TextAlignmentOptions.MidlineRight;
+                case TextAnchor.UpperLeft:
+                    return TextAlignmentOptions.TopLeft;
+                case TextAnchor.UpperCenter:
+                    return TextAlignmentOptions.Top;
+                case TextAnchor.UpperRight:
+                    return TextAlignmentOptions.TopRight;
+                case TextAnchor.LowerLeft:
+                    return TextAlignmentOptions.BottomLeft;
+                case TextAnchor.LowerCenter:
+                    return TextAlignmentOptions.Bottom;
+                case TextAnchor.LowerRight:
+                    return TextAlignmentOptions.BottomRight;
+                default:
+                    return TextAlignmentOptions.Center;
+            }
+        }
+
         private void ClearDynamicObjects()
         {
             for (int i = dynamicObjects.Count - 1; i >= 0; i--)
@@ -741,36 +1000,81 @@ namespace SquareFlow.UI
 #endif
         }
 
-        private static Font LoadFont()
+    }
+
+    public static class SquareFlowGameViewRefreshPolicy
+    {
+        public static bool NeedsFullRefresh(IReadOnlyList<GameEvent> events)
         {
-            Font loaded = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (loaded != null) return loaded;
-            loaded = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            return loaded;
+            if (events == null) return false;
+
+            for (int i = 0; i < events.Count; i++)
+                if (!IsWorldOnlyEvent(events[i].Type))
+                    return true;
+
+            return false;
+        }
+
+        private static bool IsWorldOnlyEvent(GameEventType type)
+        {
+            switch (type)
+            {
+                case GameEventType.BlockDamaged:
+                case GameEventType.BlockDestroyed:
+                case GameEventType.BombDetonated:
+                case GameEventType.OrbiterRemoved:
+                case GameEventType.ResultChanged:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 
     public static class SquareFlowVisualMetrics
     {
-        public const float OrbitLineSegmentLengthScale = 0.58f;
-        public const float OrbitLineSegmentThicknessScale = 0.16f;
-        public const float OrbitLineSegmentSpacingMultiplier = 0.68f;
+        public const float OrbitRingThicknessScale = 0.16f;
+        public const int OrbitRingPointCount = 128;
         public const float ActiveOrbiterHolderScale = 1.62f;
         public const float ActiveOrbiterGlowScale = 1.52f;
         public const float ActiveOrbiterTokenScale = 0.98f;
+        public const float ActiveOrbiterWorldScale = 2f;
+        public const float ActiveOrbiterLaunchDurationSeconds = 0.5f;
+        public const float ActiveOrbiterAmmoLabelFontSize = 1f;
+        public const float ActiveOrbiterAmmoParticleScale = 0.1f;
+        public const float ActiveOrbiterAmmoParticleOrbitRadiusScale = 0.72f;
+        public const float ActiveOrbiterAmmoParticleRotationDegreesPerSecond = 120f;
         public const float ShooterButtonMinimumDiameter = 74f;
+        public const int ShooterAmmoLabelFontSize = 18;
+        public const int ShooterAmmoLabelQueuedFontSize = 15;
+        public const float ShooterAmmoDotDiameter = 8f;
+        public const float ShooterAmmoDotSpacing = 11f;
+        public const float ShooterAmmoDotTopOffset = 8f;
+        public const float DockSlotFrontScale = 1.4f;
         public const float CellDepthOffsetScale = 0.09f;
         public const float TileFaceScale = 0.92f;
         public const float TileDepthDropScale = 0.14f;
         public const float TileDepthDarkenAmount = 0.32f;
         public const float TileTopHighlightAlpha = 0.14f;
+        public const float CellLabelFontSize = 2f;
+        public const float CellHitFeedbackDurationSeconds = 0.22f;
+        public const float CellHitShakeAmplitudeScale = 0.11f;
+        public const float CellHitHeavyShakeMultiplier = 1.45f;
+        public const float CellHitShakeFrequency = 58f;
+        public const float CellHitFlashAlpha = 0.62f;
+        public const float CellHitFaceFlashAmount = 0.72f;
+        public const float ShotBulletTrailLength = 0.56f;
     }
 
     public readonly struct SquareFlowGameplayScreenLayout
     {
+        public const int ShooterColumnVisibleRows = 5;
+
         private SquareFlowGameplayScreenLayout(
             Vector2 hudPosition,
             Vector2 hudSize,
+            Vector2 actionPosition,
+            Vector2 actionSize,
             Vector2 boardPosition,
             Vector2 queuePosition,
             Vector2 queueSize,
@@ -780,6 +1084,8 @@ namespace SquareFlow.UI
         {
             HudPosition = hudPosition;
             HudSize = hudSize;
+            ActionPosition = actionPosition;
+            ActionSize = actionSize;
             BoardPosition = boardPosition;
             QueuePosition = queuePosition;
             QueueSize = queueSize;
@@ -790,27 +1096,33 @@ namespace SquareFlow.UI
 
         public Vector2 HudPosition { get; }
         public Vector2 HudSize { get; }
+        public Vector2 ActionPosition { get; }
+        public Vector2 ActionSize { get; }
         public Vector2 BoardPosition { get; }
         public Vector2 QueuePosition { get; }
         public Vector2 QueueSize { get; }
         public Vector2 DockPosition { get; }
         public Vector2 DockSize { get; }
         public Vector2 UtilityButtonSize { get; }
+        public int DockVisibleRows => ShooterColumnVisibleRows;
 
         public static SquareFlowGameplayScreenLayout Create(BoardLayout board)
         {
-            Vector2 hudSize = new Vector2(1000f, 122f);
-            Vector2 queueSize = new Vector2(154f, 430f);
-            Vector2 dockSize = new Vector2(1000f, 150f);
+            Vector2 hudSize = new Vector2(520f, 112f);
+            Vector2 actionSize = new Vector2(274f, 88f);
+            Vector2 queueSize = new Vector2(176f, 540f);
+            Vector2 dockSize = new Vector2(520f, 540f);
             return new SquareFlowGameplayScreenLayout(
-                new Vector2(0f, 804f),
+                new Vector2(-214f, 900f),
                 hudSize,
+                new Vector2(358f, 900f),
+                actionSize,
                 Vector2.zero,
-                new Vector2(392f, 64f),
+                new Vector2(318f, -750f),
                 queueSize,
-                new Vector2(0f, -704f),
+                new Vector2(-118f, -750f),
                 dockSize,
-                new Vector2(74f, 74f));
+                new Vector2(64f, 64f));
         }
     }
 }

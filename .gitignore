@@ -1,0 +1,54 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Local/editor state
+.vs/
+.vscode/
+.idea/
+.consulo/
+.utmp/
+.superpowers/
+
+# Unity recovery/generated local artifacts
+[Aa]ssets/_Recovery/
+[Aa]ssets/_Recovery.meta
+[Gg]enerated[Aa]ssets/
+
+# Generated project files
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.pdb.meta
+*.mdb
+*.mdb.meta
+*.opendb
+*.VC.db
+
+# Build outputs and crash reports
+*.apk
+*.aab
+*.app
+*.exe
+*.x86
+*.x86_64
+*.crash
+CrashReports/
+
+# Unity cache files
+sysinfo.txt

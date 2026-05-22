@@ -33,6 +33,52 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void DefaultLayoutUsesLargerCenteredPlayfield()
+        {
+            BoardLayout board = BoardLayout.Compute(5, 5, 860f);
+            MobileWorldLayout world = MobileWorldLayout.Create(board);
+
+            Assert.That(world.BoardCenter.x, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(world.BoardCenter.y, Is.EqualTo(0.75f).Within(0.001f));
+            Assert.That(world.WorldUnitsPerLayoutPixel, Is.EqualTo(0.0215f).Within(0.0001f));
+            Assert.That(world.CanvasWidth, Is.GreaterThan(9.5f));
+        }
+
+        [Test]
+        public void FittingLayoutKeepsOrbitCanvasInsideNarrowDeviceWorldRect()
+        {
+            BoardLayout board = BoardLayout.Compute(5, 5, 860f);
+            Rect visible = Rect.MinMaxRect(-4.55f, -9.6f, 4.55f, 9.6f);
+
+            MobileWorldLayout world = MobileWorldLayout.CreateFitting(board, visible, 0.35f);
+
+            Assert.That(world.CanvasBounds.xMin, Is.GreaterThanOrEqualTo(visible.xMin + 0.35f - 0.001f));
+            Assert.That(world.CanvasBounds.xMax, Is.LessThanOrEqualTo(visible.xMax - 0.35f + 0.001f));
+            Assert.That(world.CanvasBounds.yMin, Is.GreaterThanOrEqualTo(visible.yMin + 0.35f - 0.001f));
+            Assert.That(world.CanvasBounds.yMax, Is.LessThanOrEqualTo(visible.yMax - 0.35f + 0.001f));
+            Assert.That(world.OrbitBounds.xMin, Is.GreaterThanOrEqualTo(world.CanvasBounds.xMin));
+            Assert.That(world.OrbitBounds.xMax, Is.LessThanOrEqualTo(world.CanvasBounds.xMax));
+            Assert.That(world.OrbitBounds.yMin, Is.GreaterThanOrEqualTo(world.CanvasBounds.yMin));
+            Assert.That(world.OrbitBounds.yMax, Is.LessThanOrEqualTo(world.CanvasBounds.yMax));
+        }
+
+        [Test]
+        public void DeviceLayoutFitsBetweenHudAndShooterDock()
+        {
+            BoardLayout board = BoardLayout.Compute(9, 13, 860f);
+            Rect visible = Rect.MinMaxRect(-4.55f, -9.6f, 4.55f, 9.6f);
+
+            MobileWorldLayout world = MobileWorldLayout.Create(board, visible);
+
+            Rect playfield = MobileWorldLayout.PlayfieldRect(visible);
+            Assert.That(world.CanvasBounds.xMin, Is.GreaterThanOrEqualTo(playfield.xMin + MobileWorldLayout.DefaultFitMarginWorldUnits - 0.001f));
+            Assert.That(world.CanvasBounds.xMax, Is.LessThanOrEqualTo(playfield.xMax - MobileWorldLayout.DefaultFitMarginWorldUnits + 0.001f));
+            Assert.That(world.CanvasBounds.yMin, Is.GreaterThanOrEqualTo(playfield.yMin + MobileWorldLayout.DefaultFitMarginWorldUnits - 0.001f));
+            Assert.That(world.CanvasBounds.yMax, Is.LessThanOrEqualTo(playfield.yMax - MobileWorldLayout.DefaultFitMarginWorldUnits + 0.001f));
+            Assert.That(world.BoardCenter, Is.EqualTo(playfield.center));
+        }
+
+        [Test]
         public void FirePointLookupUsesEventFireLane()
         {
             BoardLayout board = BoardLayout.Compute(4, 3, 420f);

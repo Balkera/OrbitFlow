@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using SquareFlow.Core;
 using SquareFlow.UI;
 using UnityEngine;
@@ -11,12 +12,18 @@ namespace SquareFlow.Runtime
         private const int FaceSortingOrder = 1;
         private const int HighlightSortingOrder = 2;
         private const int LabelSortingOrder = 7;
+        private const int HitFlashSortingOrder = 8;
 
         private readonly List<CellView> cells = new List<CellView>();
         private BoardShape boundShape;
         private string boundActiveMaskSignature;
         private BoardLayout boundBoard;
         private MobileWorldLayout boundWorld;
+
+        private void Update()
+        {
+            UpdateHitFeedback();
+        }
 
         public void Bind(GameState state, BoardLayout board, MobileWorldLayout world, SquareFlowTheme theme)
         {
@@ -65,13 +72,31 @@ namespace SquareFlow.Runtime
                 cell.Highlight.transform.localScale = new Vector3(tileSize * 0.72f, Mathf.Max(0.03f, tileSize * 0.08f), 1f);
                 cell.Highlight.transform.localPosition = new Vector3(0f, tileSize * 0.3f, -0.04f);
                 cell.Label.transform.localPosition = new Vector3(0f, 0f, -0.08f);
-                cell.Label.characterSize = Mathf.Max(0.16f, boundWorld.CellSize * 0.32f);
+                cell.Label.fontSize = SquareFlowVisualMetrics.CellLabelFontSize;
+                cell.Label.rectTransform.sizeDelta = Vector2.one * tileSize * 1.25f;
+                cell.HitFlash.transform.localScale = Vector3.one * tileSize;
+                cell.HitFlash.transform.localPosition = new Vector3(0f, 0f, -0.1f);
+                cell.BasePosition = center;
                 cell.Face.color = CellColor(boardCell, theme);
                 cell.Depth.color = boardCell.IsOccupied ? LerpColor(cell.Face.color, Color.black, SquareFlowVisualMetrics.TileDepthDarkenAmount) : Color.clear;
                 cell.Highlight.color = boardCell.IsOccupied ? ColorWithAlpha(Color.white, SquareFlowVisualMetrics.TileTopHighlightAlpha) : Color.clear;
                 cell.Label.text = LabelForCell(boardCell);
                 cell.Label.color = boardCell.Type == BoardCellType.Bomb || boardCell.Color == FlowColor.Yellow ? new Color32(26, 23, 64, 255) : Color.white;
+                cell.BaseFaceColor = cell.Face.color;
             }
+        }
+
+        public bool PlayHitFeedback(int row, int col, bool heavyImpact)
+        {
+            CellView cell = FindCell(row, col);
+            if (cell == null || !cell.Root.activeSelf) return false;
+
+            cell.HitElapsed = 0f;
+            cell.HitDuration = SquareFlowVisualMetrics.CellHitFeedbackDurationSeconds;
+            cell.HitStrength = heavyImpact ? SquareFlowVisualMetrics.CellHitHeavyShakeMultiplier : 1f;
+            cell.HitPhase = (row * 23f + col * 37f) * 0.19f;
+            ApplyHitFeedback(cell, 0f);
+            return true;
         }
 
         public void Clear()
@@ -111,9 +136,67 @@ namespace SquareFlow.Runtime
             SpriteRenderer depth = CreateRenderer(root.transform, "Depth", SquareFlowWorldSprites.RoundedRect, DepthSortingOrder);
             SpriteRenderer face = CreateRenderer(root.transform, "Face", SquareFlowWorldSprites.RoundedRect, FaceSortingOrder);
             SpriteRenderer highlight = CreateRenderer(root.transform, "Highlight", SquareFlowWorldSprites.Square, HighlightSortingOrder);
-            TextMesh label = CreateLabel(root.transform);
+            TextMeshPro label = CreateLabel(root.transform);
+            SpriteRenderer hitFlash = CreateRenderer(root.transform, "HitFlash", SquareFlowWorldSprites.RoundedRect, HitFlashSortingOrder);
+            hitFlash.gameObject.SetActive(false);
 
-            return new CellView(row, col, root, depth, face, highlight, label);
+            return new CellView(row, col, root, depth, face, highlight, label, hitFlash);
+        }
+
+        private CellView FindCell(int row, int col)
+        {
+            for (int i = 0; i < cells.Count; i++)
+            {
+                CellView cell = cells[i];
+                if (cell.Row == row && cell.Col == col)
+                    return cell;
+            }
+
+            return null;
+        }
+
+        private void UpdateHitFeedback()
+        {
+            for (int i = 0; i < cells.Count; i++)
+            {
+                CellView cell = cells[i];
+                if (cell.HitDuration <= 0f) continue;
+
+                cell.HitElapsed += Time.deltaTime;
+                if (cell.HitElapsed >= cell.HitDuration)
+                {
+                    ResetHitFeedback(cell);
+                    continue;
+                }
+
+                ApplyHitFeedback(cell, cell.HitElapsed / cell.HitDuration);
+            }
+        }
+
+        private void ApplyHitFeedback(CellView cell, float progress)
+        {
+            float t = Mathf.Clamp01(progress);
+            float intensity = 1f - t;
+            float shakeSize = boundWorld.IsValid
+                ? boundWorld.CellSize * SquareFlowVisualMetrics.CellHitShakeAmplitudeScale
+                : 0.05f;
+            float shake = shakeSize * cell.HitStrength * intensity;
+            float angle = cell.HitPhase + cell.HitElapsed * SquareFlowVisualMetrics.CellHitShakeFrequency;
+            Vector2 offset = new Vector2(Mathf.Sin(angle * 1.7f), Mathf.Cos(angle * 2.3f)) * shake;
+
+            cell.Root.transform.position = new Vector3(cell.BasePosition.x + offset.x, cell.BasePosition.y + offset.y, 0f);
+            cell.Face.color = LerpColor(cell.BaseFaceColor, Color.white, SquareFlowVisualMetrics.CellHitFaceFlashAmount * intensity);
+            cell.HitFlash.gameObject.SetActive(true);
+            cell.HitFlash.color = ColorWithAlpha(Color.white, SquareFlowVisualMetrics.CellHitFlashAlpha * intensity);
+        }
+
+        private void ResetHitFeedback(CellView cell)
+        {
+            cell.HitDuration = 0f;
+            cell.HitElapsed = 0f;
+            cell.Root.transform.position = new Vector3(cell.BasePosition.x, cell.BasePosition.y, 0f);
+            cell.Face.color = cell.BaseFaceColor;
+            cell.HitFlash.gameObject.SetActive(false);
         }
 
         private static SpriteRenderer CreateRenderer(Transform parent, string name, Sprite sprite, int order)
@@ -126,14 +209,16 @@ namespace SquareFlow.Runtime
             return renderer;
         }
 
-        private static TextMesh CreateLabel(Transform parent)
+        private static TextMeshPro CreateLabel(Transform parent)
         {
             GameObject go = new GameObject("Label");
             go.transform.SetParent(parent, false);
-            TextMesh label = go.AddComponent<TextMesh>();
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.fontSize = 64;
+            TextMeshPro label = go.AddComponent<TextMeshPro>();
+            label.alignment = TextAlignmentOptions.Center;
+            label.fontStyle = FontStyles.Bold;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.overflowMode = TextOverflowModes.Overflow;
+            label.raycastTarget = false;
             MeshRenderer renderer = label.GetComponent<MeshRenderer>();
             renderer.sortingOrder = LabelSortingOrder;
             return label;
@@ -202,9 +287,9 @@ namespace SquareFlow.Runtime
                 DestroyImmediate(go);
         }
 
-        private readonly struct CellView
+        private sealed class CellView
         {
-            public CellView(int row, int col, GameObject root, SpriteRenderer depth, SpriteRenderer face, SpriteRenderer highlight, TextMesh label)
+            public CellView(int row, int col, GameObject root, SpriteRenderer depth, SpriteRenderer face, SpriteRenderer highlight, TextMeshPro label, SpriteRenderer hitFlash)
             {
                 Row = row;
                 Col = col;
@@ -213,6 +298,7 @@ namespace SquareFlow.Runtime
                 Face = face;
                 Highlight = highlight;
                 Label = label;
+                HitFlash = hitFlash;
             }
 
             public int Row { get; }
@@ -221,7 +307,14 @@ namespace SquareFlow.Runtime
             public SpriteRenderer Depth { get; }
             public SpriteRenderer Face { get; }
             public SpriteRenderer Highlight { get; }
-            public TextMesh Label { get; }
+            public TextMeshPro Label { get; }
+            public SpriteRenderer HitFlash { get; }
+            public Vector2 BasePosition { get; set; }
+            public Color BaseFaceColor { get; set; }
+            public float HitElapsed { get; set; }
+            public float HitDuration { get; set; }
+            public float HitStrength { get; set; }
+            public float HitPhase { get; set; }
         }
     }
 }

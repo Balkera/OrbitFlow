@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using SquareFlow.UI;
 using UnityEngine;
 
 namespace SquareFlow.Runtime
@@ -67,19 +68,21 @@ namespace SquareFlow.Runtime
             SpriteRenderer core = Take(circlePool, "WorldShotCore", SquareFlowWorldSprites.Circle, 12);
             float angle = Mathf.Atan2(end.y - start.y, end.x - start.x) * Mathf.Rad2Deg;
             float duration = heavyImpact ? 0.16f : 0.12f;
-
-            streak.transform.position = new Vector3((start.x + end.x) * 0.5f, (start.y + end.y) * 0.5f, -0.45f);
+            Vector2 direction = (end - start).normalized;
+            float trailLength = Mathf.Min(distance, SquareFlowVisualMetrics.ShotBulletTrailLength);
             streak.transform.rotation = Quaternion.Euler(0f, 0f, angle);
-            streak.transform.localScale = new Vector3(distance, heavyImpact ? 0.08f : 0.055f, 1f);
+            streak.transform.localScale = new Vector3(trailLength, heavyImpact ? 0.08f : 0.055f, 1f);
 
             for (float elapsed = 0f; elapsed < duration; elapsed += Time.deltaTime)
             {
                 float t = Mathf.Clamp01(elapsed / duration);
                 float eased = EaseOut(t);
                 Vector2 position = Vector2.Lerp(start, end, eased);
+                Vector2 trailCenter = position - direction * trailLength * 0.5f;
                 streak.color = ColorWithAlpha(color, Mathf.Lerp(0.55f, 0.12f, t));
                 glow.color = ColorWithAlpha(color, Mathf.Lerp(0.68f, 0.1f, t));
                 core.color = ColorWithAlpha(Color.white, Mathf.Lerp(1f, 0.36f, t));
+                streak.transform.position = new Vector3(trailCenter.x, trailCenter.y, -0.45f);
                 glow.transform.position = new Vector3(position.x, position.y, -0.5f);
                 core.transform.position = new Vector3(position.x, position.y, -0.55f);
                 glow.transform.localScale = Vector3.one * (heavyImpact ? 0.48f : 0.36f);
