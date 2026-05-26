@@ -162,7 +162,7 @@ namespace SquareFlow.UI
 
             BoardShape shape = BoardShapeCatalog.GetShape(saveData.Level);
 
-            RectTransform titleGlow = AddPanel(content, "MenuTitleGlow", new Vector2(520f, 104f), ColorWithAlpha(theme.TitleGlow, 0f));
+            RectTransform titleGlow = AddPanel(content, "MenuTitleGlow", new Vector2(360f, 66f), ColorWithAlpha(theme.TitleGlow, 0f));
             ApplyGuiProPanelSkin(titleGlow, guiProTitleRibbonSprite, ColorWithAlpha(theme.TitleGlow, 0.18f));
             SetAnchored(titleGlow, startLayout.TitlePosition + new Vector2(0f, -2f));
             SetRaycastTarget(titleGlow, false);
@@ -1075,6 +1075,9 @@ namespace SquareFlow.UI
 
         private Sprite ButtonSpriteForLabel(string label, Vector2 size)
         {
+            if (string.IsNullOrEmpty(label))
+                return null;
+
             if (label == "Play" || label == "Next Level" || label == "Try Again")
                 return guiProPlayButtonSprite != null ? guiProPlayButtonSprite : guiProConfirmButtonSprite;
 
@@ -1096,7 +1099,10 @@ namespace SquareFlow.UI
 
             Image image = rect.GetComponent<Image>();
             if (image == null)
+            {
                 image = rect.gameObject.AddComponent<Image>();
+                image.raycastTarget = false;
+            }
 
             if (sprite != null)
             {
