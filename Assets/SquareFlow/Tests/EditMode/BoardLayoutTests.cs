@@ -819,7 +819,17 @@ namespace SquareFlow.Tests
                 RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
                 Assert.That(cards.Length, Is.EqualTo(3));
                 for (int i = 0; i < cards.Length; i++)
+                {
+                    AssertRectTransformLayout(
+                        cards[i],
+                        new Vector2(0.5f, 0.5f),
+                        new Vector2(0.5f, 0.5f),
+                        new Vector2(340f, 468f),
+                        new Vector2(-520f + i * 350f, -234f),
+                        new Vector2(-180f + i * 350f, 234f));
+                    Assert.That(cards[i].anchoredPosition, Is.EqualTo(new Vector2(-350f + i * 350f, 0f)));
                     AssertGuiProPanel(cards[i]);
+                }
 
                 Assert.That(columns.GetComponentsInChildren<Button>().Length, Is.EqualTo(3));
             }
