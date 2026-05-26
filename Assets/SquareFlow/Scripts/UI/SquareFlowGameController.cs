@@ -1155,7 +1155,7 @@ namespace SquareFlow.UI
 
             if (frameSprite != null && sprite != null)
             {
-                RectTransform icon = AddPanel(rect, "Icon", size * 0.58f, Color.white, sprite);
+                RectTransform icon = AddPanel(rect, SemanticActionIconName(objectName, sprite), size * 0.58f, Color.white, sprite);
                 SetAnchored(icon, Vector2.zero);
                 Image iconImage = icon.GetComponent<Image>();
                 iconImage.preserveAspect = true;
@@ -1163,6 +1163,14 @@ namespace SquareFlow.UI
             }
 
             return button;
+        }
+
+        private static string SemanticActionIconName(string objectName, Sprite sprite)
+        {
+            if (sprite != null && sprite.texture != null && !string.IsNullOrEmpty(sprite.texture.name))
+                return sprite.texture.name + "Icon";
+
+            return objectName + "Icon";
         }
 
         private RectTransform AddShooterButton(RectTransform parent, Shooter shooter, Vector2 position, Vector2 size, UnityEngine.Events.UnityAction action)
