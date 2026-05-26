@@ -66,22 +66,18 @@ namespace SquareFlow.Core
             layout.Inset = Mathf.Round(layout.Cell * 0.62f);
             layout.GridWidth = cols * (layout.Cell + Gap) - Gap;
             layout.GridHeight = rows * (layout.Cell + Gap) - Gap;
-            float orbitInnerMargin = Mathf.Max(0f, layout.Pad - layout.Inset);
-            float gridHalfDiagonal = Mathf.Sqrt(layout.GridWidth * layout.GridWidth + layout.GridHeight * layout.GridHeight) * 0.5f;
-            float orbitRadius = Mathf.Ceil(gridHalfDiagonal + orbitInnerMargin);
-            float orbitDiameter = orbitRadius * 2f;
-            layout.CanvasWidth = orbitDiameter + layout.Inset * 2f;
-            layout.CanvasHeight = layout.CanvasWidth;
+            layout.CanvasWidth = layout.Pad * 2f + layout.GridWidth;
+            layout.CanvasHeight = layout.Pad * 2f + layout.GridHeight;
             layout.OrbitX = layout.Inset;
             layout.OrbitY = layout.Inset;
-            layout.OrbitWidth = orbitDiameter;
-            layout.OrbitHeight = orbitDiameter;
+            layout.OrbitWidth = layout.CanvasWidth - 2f * layout.Inset;
+            layout.OrbitHeight = layout.CanvasHeight - 2f * layout.Inset;
             layout.OrbitRadiusX = layout.OrbitWidth * 0.5f;
             layout.OrbitRadiusY = layout.OrbitHeight * 0.5f;
             layout.OrbitCenterX = layout.OrbitX + layout.OrbitRadiusX;
             layout.OrbitCenterY = layout.OrbitY + layout.OrbitRadiusY;
-            layout.GridX = (layout.CanvasWidth - layout.GridWidth) * 0.5f;
-            layout.GridY = (layout.CanvasHeight - layout.GridHeight) * 0.5f;
+            layout.GridX = layout.Pad;
+            layout.GridY = layout.Pad;
             layout.Perimeter = 2f * (layout.OrbitWidth + layout.OrbitHeight);
             layout.FirePoints = layout.BuildFirePoints(rows, cols);
             return layout;
@@ -99,17 +95,17 @@ namespace SquareFlow.Core
 
         public Vector2 PathPosition(float distance)
         {
-            float d = Mathf.Repeat(distance + PathStartDistance(), Perimeter);
-            if (d < OrbitWidth) return ProjectToOrbit(new Vector2(OrbitX + d, OrbitY));
+            float d = Mathf.Repeat(distance, Perimeter);
+            if (d < OrbitWidth) return new Vector2(OrbitX + d, OrbitY);
 
             d -= OrbitWidth;
-            if (d < OrbitHeight) return ProjectToOrbit(new Vector2(OrbitX + OrbitWidth, OrbitY + d));
+            if (d < OrbitHeight) return new Vector2(OrbitX + OrbitWidth, OrbitY + d);
 
             d -= OrbitHeight;
-            if (d < OrbitWidth) return ProjectToOrbit(new Vector2(OrbitX + OrbitWidth - d, OrbitY + OrbitHeight));
+            if (d < OrbitWidth) return new Vector2(OrbitX + OrbitWidth - d, OrbitY + OrbitHeight);
 
             d -= OrbitWidth;
-            return ProjectToOrbit(new Vector2(OrbitX, OrbitY + OrbitHeight - d));
+            return new Vector2(OrbitX, OrbitY + OrbitHeight - d);
         }
 
         private List<FirePoint> BuildFirePoints(int rows, int cols)
@@ -117,13 +113,13 @@ namespace SquareFlow.Core
             List<FirePoint> points = new List<FirePoint>();
             for (int c = 0; c < cols; c++)
             {
-                float distance = OrbitDistance(CellCenterX(c) - OrbitX);
+                float distance = CellCenterX(c) - OrbitX;
                 points.Add(new FirePoint(FireSide.Top, -1, c, distance));
             }
 
             for (int r = 0; r < rows; r++)
             {
-                float distance = OrbitDistance(OrbitWidth + (CellCenterY(r) - OrbitY));
+                float distance = OrbitWidth + (CellCenterY(r) - OrbitY);
                 points.Add(new FirePoint(FireSide.Right, r, -1, distance));
             }
 
@@ -131,40 +127,18 @@ namespace SquareFlow.Core
             {
                 int col = cols - 1 - c;
                 float rawDistance = OrbitWidth + OrbitHeight + (OrbitX + OrbitWidth - CellCenterX(col));
-                points.Add(new FirePoint(FireSide.Bottom, -1, col, OrbitDistance(rawDistance)));
+                points.Add(new FirePoint(FireSide.Bottom, -1, col, rawDistance));
             }
 
             for (int r = 0; r < rows; r++)
             {
                 int row = rows - 1 - r;
                 float rawDistance = 2f * OrbitWidth + OrbitHeight + (OrbitY + OrbitHeight - CellCenterY(row));
-                points.Add(new FirePoint(FireSide.Left, row, -1, OrbitDistance(rawDistance)));
+                points.Add(new FirePoint(FireSide.Left, row, -1, rawDistance));
             }
 
             points.Sort((a, b) => a.Distance.CompareTo(b.Distance));
             return points;
-        }
-
-        private float OrbitDistance(float rawDistance)
-        {
-            return Mathf.Repeat(rawDistance - PathStartDistance(), Perimeter);
-        }
-
-        private float PathStartDistance()
-        {
-            return OrbitWidth + OrbitHeight + OrbitWidth * 0.5f;
-        }
-
-        private Vector2 ProjectToOrbit(Vector2 point)
-        {
-            float dx = point.x - OrbitCenterX;
-            float dy = point.y - OrbitCenterY;
-            float denominator = dx * dx / (OrbitRadiusX * OrbitRadiusX) + dy * dy / (OrbitRadiusY * OrbitRadiusY);
-            if (denominator <= 0f)
-                return new Vector2(OrbitCenterX, OrbitCenterY - OrbitRadiusY);
-
-            float scale = 1f / Mathf.Sqrt(denominator);
-            return new Vector2(OrbitCenterX + dx * scale, OrbitCenterY + dy * scale);
         }
     }
 }

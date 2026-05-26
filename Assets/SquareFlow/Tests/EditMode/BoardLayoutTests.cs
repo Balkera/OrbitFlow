@@ -13,7 +13,7 @@ namespace SquareFlow.Tests
     public sealed class BoardLayoutTests
     {
         [Test]
-        public void ComputeBuildsCenteredCircularOrbitGoldenValues()
+        public void ComputeBuildsHtmlRectangularOrbitGoldenValues()
         {
             BoardLayout layout = BoardLayout.Compute(7, 9, 900f);
 
@@ -22,16 +22,17 @@ namespace SquareFlow.Tests
             Assert.That(layout.Inset, Is.EqualTo(25f));
             Assert.That(layout.GridWidth, Is.EqualTo(384f));
             Assert.That(layout.GridHeight, Is.EqualTo(298f));
-            Assert.That(layout.CanvasWidth, Is.EqualTo(626f));
-            Assert.That(layout.CanvasHeight, Is.EqualTo(626f));
+            Assert.That(layout.CanvasWidth, Is.EqualTo(522f));
+            Assert.That(layout.CanvasHeight, Is.EqualTo(436f));
             Assert.That(layout.OrbitX, Is.EqualTo(25f));
             Assert.That(layout.OrbitY, Is.EqualTo(25f));
-            Assert.That(layout.OrbitWidth, Is.EqualTo(576f));
-            Assert.That(layout.OrbitHeight, Is.EqualTo(576f));
-            Assert.That(layout.OrbitRadiusX, Is.EqualTo(layout.OrbitRadiusY));
+            Assert.That(layout.OrbitWidth, Is.EqualTo(472f));
+            Assert.That(layout.OrbitHeight, Is.EqualTo(386f));
+            Assert.That(layout.OrbitRadiusX, Is.EqualTo(236f));
+            Assert.That(layout.OrbitRadiusY, Is.EqualTo(193f));
             Assert.That(layout.OrbitCenterX, Is.EqualTo(layout.CanvasWidth * 0.5f));
             Assert.That(layout.OrbitCenterY, Is.EqualTo(layout.CanvasHeight * 0.5f));
-            Assert.That(layout.Perimeter, Is.EqualTo(2304f));
+            Assert.That(layout.Perimeter, Is.EqualTo(1716f));
         }
 
         [Test]
@@ -39,33 +40,30 @@ namespace SquareFlow.Tests
         {
             BoardLayout layout = BoardLayout.Compute(7, 9, 900f);
 
-            Assert.That(layout.CellCenterX(0), Is.EqualTo(141f));
-            Assert.That(layout.CellCenterX(8), Is.EqualTo(485f));
-            Assert.That(layout.CellCenterY(0), Is.EqualTo(184f));
-            Assert.That(layout.CellCenterY(6), Is.EqualTo(442f));
+            Assert.That(layout.CellCenterX(0), Is.EqualTo(89f));
+            Assert.That(layout.CellCenterX(8), Is.EqualTo(433f));
+            Assert.That(layout.CellCenterY(0), Is.EqualTo(89f));
+            Assert.That(layout.CellCenterY(6), Is.EqualTo(347f));
             Assert.That((layout.CellCenterX(0) + layout.CellCenterX(8)) * 0.5f, Is.EqualTo(layout.OrbitCenterX));
             Assert.That((layout.CellCenterY(0) + layout.CellCenterY(6)) * 0.5f, Is.EqualTo(layout.OrbitCenterY));
         }
 
         [Test]
-        public void PathPositionReturnsRoundedOrbitPoints()
+        public void PathPositionReturnsHtmlRectanglePoints()
         {
             BoardLayout layout = BoardLayout.Compute(7, 9, 900f);
 
             Vector2 start = layout.PathPosition(0f);
-            Assert.That(start.x, Is.EqualTo(layout.OrbitCenterX).Within(0.001f));
-            Assert.That(start.y, Is.EqualTo(layout.OrbitY + layout.OrbitHeight).Within(0.001f));
-            AssertPointOnOrbitCircle(layout, start);
+            Assert.That(start.x, Is.EqualTo(layout.OrbitX).Within(0.001f));
+            Assert.That(start.y, Is.EqualTo(layout.OrbitY).Within(0.001f));
 
-            Vector2 quarter = layout.PathPosition(layout.Perimeter * 0.25f);
-            Assert.That(quarter.x, Is.EqualTo(layout.OrbitX).Within(0.001f));
-            Assert.That(quarter.y, Is.EqualTo(layout.OrbitCenterY).Within(0.001f));
-            AssertPointOnOrbitCircle(layout, quarter);
+            Vector2 topRight = layout.PathPosition(layout.OrbitWidth);
+            Assert.That(topRight.x, Is.EqualTo(layout.OrbitX + layout.OrbitWidth).Within(0.001f));
+            Assert.That(topRight.y, Is.EqualTo(layout.OrbitY).Within(0.001f));
 
-            Vector2 half = layout.PathPosition(layout.Perimeter * 0.5f);
-            Assert.That(half.x, Is.EqualTo(layout.OrbitCenterX).Within(0.001f));
-            Assert.That(half.y, Is.EqualTo(layout.OrbitY).Within(0.001f));
-            AssertPointOnOrbitCircle(layout, half);
+            Vector2 bottomRight = layout.PathPosition(layout.OrbitWidth + layout.OrbitHeight);
+            Assert.That(bottomRight.x, Is.EqualTo(layout.OrbitX + layout.OrbitWidth).Within(0.001f));
+            Assert.That(bottomRight.y, Is.EqualTo(layout.OrbitY + layout.OrbitHeight).Within(0.001f));
         }
 
         [Test]
@@ -74,30 +72,30 @@ namespace SquareFlow.Tests
             BoardLayout layout = BoardLayout.Compute(7, 9, 900f);
 
             Assert.That(layout.FirePoints.Count, Is.EqualTo(32));
-            Assert.That(layout.FirePoints[0].Side, Is.EqualTo(FireSide.Bottom));
+            Assert.That(layout.FirePoints[0].Side, Is.EqualTo(FireSide.Top));
             Assert.That(layout.FirePoints[0].Row, Is.EqualTo(-1));
-            Assert.That(layout.FirePoints[0].Col, Is.EqualTo(4));
-            Assert.That(layout.FirePoints[0].Distance, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(layout.FirePoints[0].Col, Is.EqualTo(0));
+            Assert.That(layout.FirePoints[0].Distance, Is.EqualTo(64f).Within(0.001f));
 
             for (int i = 1; i < layout.FirePoints.Count; i++)
                 Assert.That(layout.FirePoints[i].Distance, Is.GreaterThan(layout.FirePoints[i - 1].Distance));
 
             FirePoint last = layout.FirePoints[layout.FirePoints.Count - 1];
-            Assert.That(last.Side, Is.EqualTo(FireSide.Bottom));
-            Assert.That(last.Row, Is.EqualTo(-1));
-            Assert.That(last.Col, Is.EqualTo(5));
-            Assert.That(last.Distance, Is.EqualTo(2261f));
+            Assert.That(last.Side, Is.EqualTo(FireSide.Left));
+            Assert.That(last.Row, Is.EqualTo(0));
+            Assert.That(last.Col, Is.EqualTo(-1));
+            Assert.That(last.Distance, Is.EqualTo(1652f));
         }
 
         [Test]
-        public void CatalogShapesKeepEveryCellInsideCircularOrbitAndCentered()
+        public void CatalogShapesKeepEveryCellInsideRectangularOrbitAndCentered()
         {
             foreach (BoardShape shape in BoardShapeCatalog.All)
             {
                 BoardLayout layout = BoardLayout.Compute(shape.Rows, shape.Cols, 860f);
 
-                Assert.That(layout.OrbitWidth, Is.EqualTo(layout.OrbitHeight), shape.Name);
-                Assert.That(layout.OrbitRadiusX, Is.EqualTo(layout.OrbitRadiusY), shape.Name);
+                Assert.That(layout.GridX, Is.EqualTo(layout.Pad), shape.Name);
+                Assert.That(layout.GridY, Is.EqualTo(layout.Pad), shape.Name);
                 Assert.That(GridCenter(layout, shape.Cols, true), Is.EqualTo(layout.OrbitCenterX).Within(0.001f), shape.Name);
                 Assert.That(GridCenter(layout, shape.Rows, false), Is.EqualTo(layout.OrbitCenterY).Within(0.001f), shape.Name);
 
@@ -122,8 +120,8 @@ namespace SquareFlow.Tests
                 BoardLayout layout = BoardLayout.Compute(shape.Rows, shape.Cols, 860f);
                 Assert.That(layout.FirePoints.Count, Is.EqualTo(shape.Rows * 2 + shape.Cols * 2), shape.Name);
 
-                Assert.That(layout.FirePoints[0].Side, Is.EqualTo(FireSide.Bottom), shape.Name);
-                AssertBottomStartSideSequence(layout, shape.Name);
+            Assert.That(layout.FirePoints[0].Side, Is.EqualTo(FireSide.Top), shape.Name);
+            AssertTopStartSideSequence(layout, shape.Name);
             }
         }
 
@@ -157,7 +155,7 @@ namespace SquareFlow.Tests
         [Test]
         public void PrismArcadeMetricsKeepOrbitLineShootersAndTileDepthProminent()
         {
-            Assert.That(SquareFlowVisualMetrics.OrbitRingThicknessScale, Is.GreaterThanOrEqualTo(0.16f));
+            Assert.That(SquareFlowVisualMetrics.OrbitRingThicknessScale, Is.LessThanOrEqualTo(0.06f));
             Assert.That(SquareFlowVisualMetrics.OrbitRingPointCount, Is.GreaterThanOrEqualTo(96));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterTokenScale, Is.GreaterThanOrEqualTo(0.95f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterGlowScale, Is.GreaterThanOrEqualTo(1.5f));
@@ -190,26 +188,45 @@ namespace SquareFlow.Tests
             BoardLayout board = BoardLayout.Compute(5, 5, 620f);
             SquareFlowGameplayScreenLayout layout = SquareFlowGameplayScreenLayout.Create(board);
 
-            Assert.That(layout.HudSize.x, Is.EqualTo(520f));
+            Assert.That(layout.HudSize.x, Is.EqualTo(1080f));
             Assert.That(layout.HudSize.y, Is.EqualTo(112f));
-            Assert.That(layout.HudPosition.x, Is.LessThan(0f));
-            Assert.That(layout.HudPosition.y, Is.EqualTo(900f));
-            Assert.That(layout.ActionSize.x, Is.EqualTo(274f));
-            Assert.That(layout.ActionPosition.x, Is.GreaterThan(0f));
-            Assert.That(layout.ActionPosition.y, Is.EqualTo(layout.HudPosition.y));
-            Assert.That(layout.UtilityButtonSize.x, Is.EqualTo(layout.UtilityButtonSize.y));
-            Assert.That(layout.UtilityButtonSize.x, Is.EqualTo(64f));
-            Assert.That(layout.QueueSize.x, Is.EqualTo(176f));
-            Assert.That(layout.QueueSize.y, Is.EqualTo(540f));
-            Assert.That(layout.QueueSize.y, Is.GreaterThan(board.GridHeight));
-            Assert.That(layout.QueuePosition.x, Is.EqualTo(318f));
-            Assert.That(layout.QueuePosition.y, Is.EqualTo(layout.DockPosition.y));
-            Assert.That(layout.QueuePosition.y, Is.EqualTo(-750f));
-            Assert.That(layout.DockVisibleRows, Is.EqualTo(5));
-            Assert.That(layout.DockSize.x, Is.EqualTo(520f));
-            Assert.That(layout.DockSize.y, Is.EqualTo(540f));
-            Assert.That(layout.QueueSize.y, Is.EqualTo(layout.DockSize.y));
-            Assert.That(layout.QueuePosition.x - layout.QueueSize.x * 0.5f - (layout.DockPosition.x + layout.DockSize.x * 0.5f), Is.InRange(40f, 60f));
+            Assert.That(layout.HudPosition, Is.EqualTo(new Vector2(0f, 904f)));
+            Assert.That(layout.ActionSize.x, Is.EqualTo(430f));
+            Assert.That(layout.ActionPosition.x, Is.EqualTo(330f));
+            Assert.That(layout.ActionPosition.y, Is.EqualTo(0f));
+            Assert.That(layout.UtilityButtonSize, Is.EqualTo(new Vector2(72f, 62f)));
+            Assert.That(layout.OrbiterStripSize, Is.EqualTo(new Vector2(1064f, 70f)));
+            Assert.That(layout.OrbiterStripPosition, Is.EqualTo(new Vector2(0f, 797f)));
+            Assert.That(layout.OrbiterStripTopOffset, Is.EqualTo(128f));
+            Assert.That(layout.BoardPanelSize, Is.EqualTo(new Vector2(1080f, 1080f)));
+            Assert.That(layout.BoardPanelPosition, Is.EqualTo(new Vector2(0f, 260f)));
+            Assert.That(layout.QueueSize.x, Is.EqualTo(1064f));
+            Assert.That(layout.QueueSize.y, Is.EqualTo(164f));
+            Assert.That(layout.QueuePosition.x, Is.EqualTo(0f));
+            Assert.That(layout.QueuePosition.y, Is.EqualTo(-378f));
+            Assert.That(layout.QueueBottomOffset, Is.EqualTo(500f));
+            Assert.That(layout.DockVisibleRows, Is.EqualTo(4));
+            Assert.That(layout.DockSize.x, Is.EqualTo(1064f));
+            Assert.That(layout.DockSize.y, Is.EqualTo(480f));
+            Assert.That(layout.DockPosition.x, Is.EqualTo(0f));
+            Assert.That(layout.DockPosition.y, Is.EqualTo(-708f));
+            Assert.That(layout.DockBottomOffset, Is.EqualTo(12f));
+        }
+
+        [Test]
+        public void IPhoneSafeAreaConvertsToCanvasPadding()
+        {
+            Rect safeArea = new Rect(0f, 102f, 1284f, 2535f);
+            Vector2 screenSize = new Vector2(1284f, 2778f);
+            Vector2 canvasSize = new Vector2(1080f, 2778f * 1080f / 1284f);
+
+            Vector4 padding = SquareFlowSafeArea.PaddingForCanvas(safeArea, screenSize, canvasSize);
+
+            Assert.That(padding.x, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(padding.z, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(padding.y, Is.EqualTo(102f * canvasSize.y / screenSize.y).Within(0.001f));
+            Assert.That(padding.w, Is.EqualTo(141f * canvasSize.y / screenSize.y).Within(0.001f));
+            Assert.That(padding.w, Is.GreaterThan(padding.y));
         }
 
         [Test]
@@ -238,7 +255,7 @@ namespace SquareFlow.Tests
         }
 
         [Test]
-        public void ShooterTokensShowAmmoDotsAndCountsAboveSelectableAndQueuedTokens()
+        public void ShooterTokensShowHtmlStyleCountsWithoutAmmoDotRows()
         {
             GameObject host = new GameObject("SquareFlowControllerHost");
             GameObject selectableParent = new GameObject("SelectableShooterParent", typeof(RectTransform));
@@ -255,23 +272,18 @@ namespace SquareFlow.Tests
                 Transform selectableDots = selectableToken.Find("AmmoDots");
                 TMP_Text selectableLabel = selectableToken.Find("AmmoLabel").GetComponent<TMP_Text>();
 
-                Assert.That(selectableDots, Is.Not.Null);
+                Assert.That(selectableDots, Is.Null);
                 Assert.That(selectableLabel.text, Is.EqualTo("3"));
                 Assert.That(selectableLabel.fontSize, Is.EqualTo(SquareFlowVisualMetrics.ShooterAmmoLabelFontSize));
-                Assert.That(AmmoDotCount(selectableDots), Is.EqualTo(3));
-                Assert.That(selectableDots.GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(35f + SquareFlowVisualMetrics.ShooterAmmoDotTopOffset).Within(0.001f));
-                Assert.That(selectableDots.GetChild(0).GetComponent<RectTransform>().sizeDelta.x, Is.EqualTo(SquareFlowVisualMetrics.ShooterAmmoDotDiameter));
-                Assert.That(selectableDots.GetChild(0).GetComponent<Image>().raycastTarget, Is.False);
 
                 InvokeAddShooterToken(controller, queuedParent.GetComponent<RectTransform>(), new Shooter("queued", FlowColor.Red, 2, false), false);
                 Transform queuedToken = queuedParent.transform.Find("ShooterPreview");
                 Transform queuedDots = queuedToken.Find("AmmoDots");
                 TMP_Text queuedLabel = queuedToken.Find("AmmoLabel").GetComponent<TMP_Text>();
 
-                Assert.That(queuedDots, Is.Not.Null);
+                Assert.That(queuedDots, Is.Null);
                 Assert.That(queuedLabel.text, Is.EqualTo("2"));
                 Assert.That(queuedLabel.fontSize, Is.EqualTo(SquareFlowVisualMetrics.ShooterAmmoLabelQueuedFontSize));
-                Assert.That(AmmoDotCount(queuedDots), Is.EqualTo(2));
             }
             finally
             {
@@ -296,6 +308,9 @@ namespace SquareFlow.Tests
 
                 Transform canvas = host.transform.Find("SquareFlowCanvas");
                 Assert.That(canvas, Is.Not.Null);
+                CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
+                Assert.That(scaler, Is.Not.Null);
+                Assert.That(scaler.matchWidthOrHeight, Is.EqualTo(0f));
                 Transform panel = canvas.Find("MenuPanel");
                 Assert.That(panel, Is.Not.Null);
                 RectTransform panelRect = panel.GetComponent<RectTransform>();
@@ -310,35 +325,58 @@ namespace SquareFlow.Tests
                 RectTransform contentRect = content.GetComponent<RectTransform>();
                 Assert.That(contentRect.anchorMin, Is.EqualTo(new Vector2(0.5f, 0.5f)));
                 Assert.That(contentRect.anchorMax, Is.EqualTo(new Vector2(0.5f, 0.5f)));
-                Assert.That(contentRect.sizeDelta.x, Is.GreaterThanOrEqualTo(860f));
-                Assert.That(contentRect.sizeDelta.y, Is.GreaterThanOrEqualTo(1320f));
+                Assert.That(contentRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 40f)));
+                Assert.That(contentRect.sizeDelta.x, Is.EqualTo(1030f));
+                Assert.That(contentRect.sizeDelta.y, Is.EqualTo(1260f));
 
                 TMP_Text title = FindText(content, "Square Flow");
-                Assert.That(title.fontSize, Is.GreaterThanOrEqualTo(70));
+                Assert.That(title.fontSize, Is.GreaterThanOrEqualTo(84));
+                Assert.That(content.Find("MenuTitleGlow"), Is.Not.Null);
+                Assert.That(content.Find("MenuSwatches"), Is.Not.Null);
+                Assert.That(content.Find("ThemeToggle"), Is.Not.Null);
+                Assert.That(content.Find("MenuStatsCard"), Is.Not.Null);
+                Assert.That(content.Find("InstructionsCard"), Is.Not.Null);
+                Assert.That(content.Find("LevelSelector"), Is.Not.Null);
+                Assert.That(content.Find("MenuStatsCard").GetComponent<RectTransform>().sizeDelta.x, Is.EqualTo(1000f));
+                Assert.That(content.Find("MenuTitleGlow").GetComponent<Image>().raycastTarget, Is.False);
 
                 TMP_Text playLabel = FindText(content, "Play");
                 RectTransform playButton = playLabel.transform.parent.GetComponent<RectTransform>();
-                Assert.That(playButton.sizeDelta.x, Is.GreaterThanOrEqualTo(500f));
-                Assert.That(playButton.sizeDelta.y, Is.GreaterThanOrEqualTo(90f));
-                Assert.That(playLabel.fontSize, Is.GreaterThanOrEqualTo(30));
+                Assert.That(playButton.gameObject.name, Is.EqualTo("PlayButton"));
+                Assert.That(playButton.sizeDelta.x, Is.EqualTo(410f));
+                Assert.That(playButton.sizeDelta.y, Is.EqualTo(128f));
+                Assert.That(playLabel.fontSize, Is.GreaterThanOrEqualTo(40));
+                Transform shine = playButton.Find("PlayButtonShine");
+                Assert.That(shine, Is.Not.Null);
+                Assert.That(shine.GetComponent<Image>().raycastTarget, Is.False);
+                Assert.That(FindText(content, "Reset All"), Is.Not.Null);
+                Assert.That(FindText(content, "MAX ORBS"), Is.Not.Null);
+                Assert.That(FindText(content, "5"), Is.Not.Null);
+                Assert.That(FindText(content, "HP blocks"), Is.Not.Null);
 
                 Assert.That(content.GetComponentsInChildren<Text>().Length, Is.EqualTo(0));
 
+                Transform selector = content.Find("LevelSelector");
                 int levelButtonCount = 0;
-                TMP_Text[] labels = content.GetComponentsInChildren<TMP_Text>();
+                float levelButtonY = float.NaN;
+                TMP_Text[] labels = selector.GetComponentsInChildren<TMP_Text>();
                 for (int i = 0; i < labels.Length; i++)
                 {
                     int level;
                     if (!int.TryParse(labels[i].text, out level)) continue;
 
                     RectTransform button = labels[i].transform.parent.GetComponent<RectTransform>();
-                    Assert.That(button.sizeDelta.x, Is.GreaterThanOrEqualTo(108f));
-                    Assert.That(button.sizeDelta.y, Is.GreaterThanOrEqualTo(64f));
-                    Assert.That(labels[i].fontSize, Is.GreaterThanOrEqualTo(28));
+                    Assert.That(button.sizeDelta.x, Is.EqualTo(66f));
+                    Assert.That(button.sizeDelta.y, Is.EqualTo(62f));
+                    Assert.That(labels[i].fontSize, Is.EqualTo(22));
+                    if (float.IsNaN(levelButtonY))
+                        levelButtonY = button.anchoredPosition.y;
+                    Assert.That(button.anchoredPosition.y, Is.EqualTo(levelButtonY).Within(0.001f));
                     levelButtonCount++;
                 }
 
                 Assert.That(levelButtonCount, Is.EqualTo(BoardShapeCatalog.Count));
+                Assert.That(FindText(content, "Leaderboard"), Is.Null);
             }
             finally
             {
@@ -346,15 +384,77 @@ namespace SquareFlow.Tests
             }
         }
 
-        private static void AssertBottomStartSideSequence(BoardLayout layout, string shapeName)
+        [Test]
+        public void GameplayViewBuildsFigmaReferencePanelsAndHorizontalQueues()
+        {
+            GameObject host = new GameObject("SquareFlowControllerHost");
+
+            try
+            {
+                SquareFlowGameController controller = host.AddComponent<SquareFlowGameController>();
+                InvokePrivate(controller, "Awake");
+                InvokePrivate(controller, "SelectLevel", 5);
+                InvokePrivate(controller, "StartLevel");
+
+                Transform canvas = host.transform.Find("SquareFlowCanvas");
+                Assert.That(canvas, Is.Not.Null);
+                Assert.That(canvas.Find("GameHeader"), Is.Not.Null);
+                Assert.That(canvas.Find("OrbiterStrip"), Is.Not.Null);
+                Transform boardFrame = canvas.Find("BoardFrame");
+                Assert.That(boardFrame, Is.Not.Null);
+                RectTransform boardFrameRect = boardFrame.GetComponent<RectTransform>();
+                Assert.That(boardFrameRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 260f)));
+                Image boardFrameImage = boardFrame.GetComponent<Image>();
+                Assert.That(boardFrameImage.color.a, Is.EqualTo(0f));
+                Assert.That(boardFrameImage.raycastTarget, Is.False);
+
+                Transform waiting = canvas.Find("WaitingQueue");
+                Assert.That(waiting, Is.Not.Null);
+                RectTransform waitingRect = waiting.GetComponent<RectTransform>();
+                Assert.That(waitingRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
+                Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
+                Assert.That(waitingRect.sizeDelta, Is.EqualTo(new Vector2(-16f, 164f)));
+                Assert.That(waitingRect.offsetMin.x, Is.EqualTo(8f));
+                Assert.That(waitingRect.offsetMax.x, Is.EqualTo(-8f));
+
+                RectTransform[] waitingSlots = NamedChildren(waiting, "WaitingSlot");
+                Assert.That(waitingSlots.Length, Is.EqualTo(SquareFlowConstants.WaitQueueLimit));
+                float waitingY = waitingSlots[0].anchoredPosition.y;
+                for (int i = 0; i < waitingSlots.Length; i++)
+                {
+                    Assert.That(waitingSlots[i].anchoredPosition.y, Is.EqualTo(waitingY).Within(0.001f));
+                    if (i > 0)
+                        Assert.That(waitingSlots[i].anchoredPosition.x, Is.GreaterThan(waitingSlots[i - 1].anchoredPosition.x));
+                }
+
+                Transform columns = canvas.Find("ShooterColumns");
+                Assert.That(columns, Is.Not.Null);
+                RectTransform columnsRect = columns.GetComponent<RectTransform>();
+                Assert.That(columnsRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
+                Assert.That(columnsRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
+                Assert.That(columnsRect.sizeDelta, Is.EqualTo(new Vector2(-16f, 480f)));
+                RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
+                Assert.That(cards.Length, Is.EqualTo(3));
+                Assert.That(cards[0].sizeDelta, Is.EqualTo(new Vector2(340f, 468f)));
+                Assert.That(FindText(cards[0], "A"), Is.Not.Null);
+                Assert.That(FindText(cards[1], "B"), Is.Not.Null);
+                Assert.That(FindText(cards[2], "C"), Is.Not.Null);
+                Assert.That(columns.GetComponentsInChildren<Button>().Length, Is.EqualTo(3));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        private static void AssertTopStartSideSequence(BoardLayout layout, string shapeName)
         {
             FireSide[] expectedPhases =
             {
-                FireSide.Bottom,
-                FireSide.Left,
                 FireSide.Top,
                 FireSide.Right,
-                FireSide.Bottom
+                FireSide.Bottom,
+                FireSide.Left
             };
             int phase = 0;
 
@@ -368,6 +468,14 @@ namespace SquareFlow.Tests
 
                 Assert.That(layout.FirePoints[i].Side, Is.EqualTo(expectedPhases[phase]), shapeName + " fire point " + i);
             }
+        }
+
+        private static void AssertPointOnOrbitCircle(BoardLayout layout, Vector2 point)
+        {
+            float dx = point.x - layout.OrbitCenterX;
+            float dy = point.y - layout.OrbitCenterY;
+
+            Assert.That(Mathf.Sqrt(dx * dx + dy * dy), Is.EqualTo(layout.OrbitRadiusX).Within(0.01f));
         }
 
         private static FirePoint FirstPoint(BoardLayout layout, FireSide side)
@@ -424,14 +532,6 @@ namespace SquareFlow.Tests
             }
         }
 
-        private static void AssertPointOnOrbitCircle(BoardLayout layout, Vector2 point)
-        {
-            float dx = point.x - layout.OrbitCenterX;
-            float dy = point.y - layout.OrbitCenterY;
-
-            Assert.That(Mathf.Sqrt(dx * dx + dy * dy), Is.EqualTo(layout.OrbitRadiusX).Within(0.01f));
-        }
-
         private static float GridCenter(BoardLayout layout, int count, bool horizontal)
         {
             float first = horizontal ? layout.CellCenterX(0) : layout.CellCenterY(0);
@@ -443,11 +543,11 @@ namespace SquareFlow.Tests
         {
             float x = layout.CellCenterX(col) + xOffset * layout.Cell;
             float y = layout.CellCenterY(row) + yOffset * layout.Cell;
-            float dx = x - layout.OrbitCenterX;
-            float dy = y - layout.OrbitCenterY;
-            float distance = Mathf.Sqrt(dx * dx + dy * dy);
 
-            Assert.That(distance, Is.LessThan(layout.OrbitRadiusX - 1f), shapeName + " cell " + row + "," + col);
+            Assert.That(x, Is.GreaterThan(layout.OrbitX), shapeName + " cell " + row + "," + col);
+            Assert.That(x, Is.LessThan(layout.OrbitX + layout.OrbitWidth), shapeName + " cell " + row + "," + col);
+            Assert.That(y, Is.GreaterThan(layout.OrbitY), shapeName + " cell " + row + "," + col);
+            Assert.That(y, Is.LessThan(layout.OrbitY + layout.OrbitHeight), shapeName + " cell " + row + "," + col);
         }
 
         private static void AssertFirePoint(FirePoint point, FireSide side, int row, int col, string shapeName)
@@ -489,6 +589,12 @@ namespace SquareFlow.Tests
             method.Invoke(target, null);
         }
 
+        private static void InvokePrivate(object target, string methodName, params object[] args)
+        {
+            MethodInfo method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Invoke(target, args);
+        }
+
         private static void SetPrivateField<T>(object target, string fieldName, T value)
         {
             FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
@@ -512,8 +618,20 @@ namespace SquareFlow.Tests
                 if (labels[i].text == value)
                     return labels[i];
 
-            Assert.Fail("Missing text: " + value);
             return null;
+        }
+
+        private static RectTransform[] NamedChildren(Transform parent, string name)
+        {
+            List<RectTransform> matches = new List<RectTransform>();
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name == name)
+                    matches.Add(child.GetComponent<RectTransform>());
+            }
+
+            return matches.ToArray();
         }
     }
 }

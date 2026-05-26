@@ -39,9 +39,9 @@ namespace SquareFlow.Tests
             MobileWorldLayout world = MobileWorldLayout.Create(board);
 
             Assert.That(world.BoardCenter.x, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(world.BoardCenter.y, Is.EqualTo(0.75f).Within(0.001f));
-            Assert.That(world.WorldUnitsPerLayoutPixel, Is.EqualTo(0.0215f).Within(0.0001f));
-            Assert.That(world.CanvasWidth, Is.GreaterThan(9.5f));
+            Assert.That(world.BoardCenter.y, Is.EqualTo(2.22f).Within(0.001f));
+            Assert.That(world.WorldUnitsPerLayoutPixel, Is.EqualTo(0.01f).Within(0.0001f));
+            Assert.That(world.CanvasWidth, Is.GreaterThan(4.4f));
         }
 
         [Test]

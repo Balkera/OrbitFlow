@@ -5,11 +5,11 @@ namespace SquareFlow.Runtime
 {
     public readonly struct MobileWorldLayout
     {
-        public const float DefaultWorldUnitsPerLayoutPixel = 0.0215f;
-        public const float DefaultFitMarginWorldUnits = 0.35f;
-        public const float DefaultPlayfieldTopWorldY = 8.15f;
-        public const float DefaultPlayfieldBottomWorldY = -4.65f;
-        public static readonly Vector2 DefaultBoardCenter = new Vector2(0f, 0.75f);
+        public const float DefaultWorldUnitsPerLayoutPixel = 0.01f;
+        public const float DefaultFitMarginWorldUnits = 0.25f;
+        public const float DefaultPlayfieldTopWorldY = 7.65f;
+        public const float DefaultPlayfieldBottomWorldY = -2.72f;
+        public static readonly Vector2 DefaultBoardCenter = new Vector2(0f, 2.22f);
 
         private readonly BoardLayout board;
 

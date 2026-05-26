@@ -35,12 +35,12 @@ namespace SquareFlow.Runtime
             ring.positionCount = count;
             ring.loop = true;
             ring.useWorldSpace = true;
-            ring.startWidth = Mathf.Max(0.035f, board.Cell * SquareFlowVisualMetrics.OrbitRingThicknessScale * world.WorldUnitsPerLayoutPixel);
+            ring.startWidth = Mathf.Max(0.012f, board.Cell * SquareFlowVisualMetrics.OrbitRingThicknessScale * world.WorldUnitsPerLayoutPixel);
             ring.endWidth = ring.startWidth;
-            ring.startColor = ColorWithAlpha(theme.Score, 0.86f);
+            ring.startColor = ColorWithAlpha(theme.SubtleText, 0.28f);
             ring.endColor = ring.startColor;
-            ring.numCapVertices = 6;
-            ring.numCornerVertices = 6;
+            ring.numCapVertices = 0;
+            ring.numCornerVertices = 0;
             ring.sortingOrder = -1;
 
             for (int i = 0; i < count; i++)
