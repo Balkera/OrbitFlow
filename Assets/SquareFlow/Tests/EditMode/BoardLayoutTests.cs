@@ -500,7 +500,7 @@ namespace SquareFlow.Tests
                 AssertGuiProButton(resetButton, "Button01_175_Red");
                 AssertGuiProFont(FindText(resetButton, "Reset All"));
 
-                Button[] buttons = content.GetComponentsInChildren<Button>();
+                Button[] buttons = content.GetComponentsInChildren<Button>(true);
                 Assert.That(buttons.Length, Is.EqualTo(BoardShapeCatalog.Count + 3));
                 RectTransform[] levelButtons = NamedChildren(content.Find("LevelSelector"), "LevelButton");
                 Assert.That(levelButtons.Length, Is.EqualTo(BoardShapeCatalog.Count));
@@ -769,7 +769,7 @@ namespace SquareFlow.Tests
                     new Vector2(78f, 78f),
                     new Vector2(-165f, -39f),
                     new Vector2(-87f, 39f));
-                AssertSpriteButton(hudActions.Find("HomeButton"), "FlowHomeButton");
+                AssertGuiProIconButton(hudActions.Find("HomeButton"));
                 AssertRectTransformLayout(
                     hudActions.Find("RestartButton"),
                     new Vector2(0.5f, 0.5f),
@@ -777,7 +777,7 @@ namespace SquareFlow.Tests
                     new Vector2(78f, 78f),
                     new Vector2(-81f, -39f),
                     new Vector2(-3f, 39f));
-                AssertSpriteButton(hudActions.Find("RestartButton"), "FlowRestartButton");
+                AssertGuiProIconButton(hudActions.Find("RestartButton"));
                 AssertRectTransformLayout(
                     hudActions.Find("PaletteButton"),
                     new Vector2(0.5f, 0.5f),
@@ -785,7 +785,7 @@ namespace SquareFlow.Tests
                     new Vector2(78f, 78f),
                     new Vector2(3f, -39f),
                     new Vector2(81f, 39f));
-                AssertSpriteButton(hudActions.Find("PaletteButton"), "FlowPaletteButton");
+                AssertGuiProIconButton(hudActions.Find("PaletteButton"));
                 AssertRectTransformLayout(
                     hudActions.Find("MuteButton"),
                     new Vector2(0.5f, 0.5f),
@@ -793,7 +793,7 @@ namespace SquareFlow.Tests
                     new Vector2(78f, 78f),
                     new Vector2(87f, -39f),
                     new Vector2(165f, 39f));
-                AssertSpriteButton(hudActions.Find("MuteButton"), "FlowMuteButton");
+                AssertGuiProIconButton(hudActions.Find("MuteButton"));
 
                 AssertGuiProFont(FindText(header.Find("ScoreCard"), "SCORE"));
                 AssertGuiProFont(FindText(header.Find("BestCard"), "BEST"));
@@ -877,6 +877,20 @@ namespace SquareFlow.Tests
             Assert.That(image, Is.Not.Null);
             Assert.That(image.sprite, Is.Not.Null);
             Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
+            Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
+            Assert.That(image.color, Is.EqualTo(Color.white));
+            Assert.That(button.GetComponent<Button>(), Is.Not.Null);
+        }
+
+        private static void AssertGuiProIconButton(Transform button)
+        {
+            Assert.That(button, Is.Not.Null);
+            Image image = button.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.sprite, Is.Not.Null);
+            Assert.That(image.sprite.texture.name, Does.StartWith("Button01_100_"));
+            Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
+            Assert.That(image.color, Is.EqualTo(Color.white));
             Assert.That(button.GetComponent<Button>(), Is.Not.Null);
         }
 
