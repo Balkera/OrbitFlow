@@ -170,6 +170,34 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void BoardWorldViewUsesTextureSpriteForEmptyGridCellTray()
+        {
+            GameObject host = new GameObject("BoardWorldViewHost");
+            try
+            {
+                BoardWorldView view = host.AddComponent<BoardWorldView>();
+                BoardShape shape = new BoardShape("One", BoardShape.Mask(new[] { 1 }));
+                BoardCell[,] grid = { { BoardCell.Empty } };
+                BoardLayout board = BoardLayout.Compute(1, 1, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+
+                view.Bind(GameState.Create(shape, grid, EmptyColumns(), 1), board, world, theme);
+
+                Transform cell = host.transform.Find("WorldCell_0_0");
+                SpriteRenderer face = cell.Find("Face").GetComponent<SpriteRenderer>();
+                Assert.That(face.sprite.texture.name, Is.EqualTo("FlowGridCellTray"));
+                Assert.That(face.sprite.texture.width, Is.LessThanOrEqualTo(512));
+                Assert.That(face.sprite.texture.height, Is.LessThanOrEqualTo(512));
+                Assert.That(face.color, Is.EqualTo(Color.white));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void BoardWorldViewActivatesFlashLayerForHitCell()
         {
             GameObject host = new GameObject("BoardWorldViewHost");
@@ -332,13 +360,51 @@ namespace SquareFlow.Tests
                 Assert.That(firstParticle.sortingOrder, Is.GreaterThan(token.sortingOrder));
                 Assert.That(firstParticle.transform.localPosition.magnitude, Is.EqualTo(world.CellSize * SquareFlowVisualMetrics.ActiveOrbiterAmmoParticleOrbitRadiusScale).Within(0.001f));
                 Assert.That(firstParticle.transform.localScale.x, Is.EqualTo(SquareFlowVisualMetrics.ActiveOrbiterAmmoParticleScale).Within(0.001f));
-                Assert.That(firstParticle.color, Is.EqualTo(token.color));
+                Assert.That(firstParticle.color, Is.EqualTo(theme.Yellow));
 
                 orbiters[0].Ammo = 1;
                 view.Refresh(orbiters, world, theme);
 
                 Assert.That(ActiveChildCount(ring), Is.EqualTo(1));
                 Assert.That(label.text, Is.EqualTo("1"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void OrbiterWorldViewUsesTextureSpritesByColor()
+        {
+            GameObject host = new GameObject("OrbiterWorldViewHost");
+            try
+            {
+                OrbiterWorldView view = host.AddComponent<OrbiterWorldView>();
+                BoardLayout board = BoardLayout.Compute(1, 1, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+                List<ActiveOrbiter> orbiters = new List<ActiveOrbiter>
+                {
+                    new ActiveOrbiter(new Shooter("green-id", FlowColor.Green, 1, false)),
+                    new ActiveOrbiter(new Shooter("wild-id", FlowColor.Wild, 1, true))
+                };
+
+                view.Refresh(orbiters, world, theme);
+
+                SpriteRenderer greenToken = host.transform.Find("WorldOrbiter_green-id/Token").GetComponent<SpriteRenderer>();
+                Assert.That(greenToken.sprite.texture.name, Is.EqualTo("FlowOrbitGreen"));
+                Assert.That(greenToken.color, Is.EqualTo(Color.white));
+                Assert.That(view.TryGetColor("green-id", out Color greenColor), Is.True);
+                Assert.That(greenColor, Is.EqualTo(theme.Green));
+
+                SpriteRenderer wildToken = host.transform.Find("WorldOrbiter_wild-id/Token").GetComponent<SpriteRenderer>();
+                Assert.That(wildToken.sprite.texture.name, Is.EqualTo("FlowOrbitOrange"));
+                Assert.That(wildToken.color, Is.EqualTo(Color.white));
+                Assert.That(view.TryGetColor("wild-id", out Color wildColor), Is.True);
+                Assert.That(wildColor, Is.EqualTo(theme.Wild));
+                Assert.That(greenToken.sprite.texture.width, Is.LessThanOrEqualTo(512));
+                Assert.That(greenToken.sprite.texture.height, Is.LessThanOrEqualTo(512));
             }
             finally
             {

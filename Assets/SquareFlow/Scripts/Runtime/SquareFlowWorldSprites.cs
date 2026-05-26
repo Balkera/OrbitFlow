@@ -14,6 +14,13 @@ namespace SquareFlow.Runtime
         private static Sprite blockYellow;
         private static Sprite blockGreen;
         private static Sprite blockOrange;
+        private static Sprite gridCellTray;
+        private static Sprite orbitRed;
+        private static Sprite orbitBlue;
+        private static Sprite orbitYellow;
+        private static Sprite orbitGreen;
+        private static Sprite orbitOrange;
+        private static Sprite skyBackground;
 
         public static Sprite RoundedRect
         {
@@ -51,10 +58,19 @@ namespace SquareFlow.Runtime
             }
         }
 
+        public static Sprite SkyBackground
+        {
+            get
+            {
+                Ensure();
+                return skyBackground;
+            }
+        }
+
         public static Sprite BlockForCell(BoardCell cell)
         {
             Ensure();
-            if (!cell.IsOccupied) return roundedRect;
+            if (!cell.IsOccupied) return gridCellTray != null ? gridCellTray : roundedRect;
             if (cell.Type == BoardCellType.Bomb) return blockOrange != null ? blockOrange : roundedRect;
 
             switch (cell.Color)
@@ -67,6 +83,24 @@ namespace SquareFlow.Runtime
                     return blockGreen != null ? blockGreen : roundedRect;
                 default:
                     return blockRed != null ? blockRed : roundedRect;
+            }
+        }
+
+        public static Sprite OrbitForShooter(FlowColor color, bool wild)
+        {
+            Ensure();
+            if (wild || color == FlowColor.Wild) return orbitOrange != null ? orbitOrange : circle;
+
+            switch (color)
+            {
+                case FlowColor.Blue:
+                    return orbitBlue != null ? orbitBlue : circle;
+                case FlowColor.Yellow:
+                    return orbitYellow != null ? orbitYellow : circle;
+                case FlowColor.Green:
+                    return orbitGreen != null ? orbitGreen : circle;
+                default:
+                    return orbitRed != null ? orbitRed : circle;
             }
         }
 
@@ -83,11 +117,33 @@ namespace SquareFlow.Runtime
             blockYellow = LoadBlockSprite("FlowBlockYellow");
             blockGreen = LoadBlockSprite("FlowBlockGreen");
             blockOrange = LoadBlockSprite("FlowBlockOrange");
+            gridCellTray = LoadBlockSprite("FlowGridCellTray");
+            orbitRed = LoadOrbitSprite("FlowOrbitRed");
+            orbitBlue = LoadOrbitSprite("FlowOrbitBlue");
+            orbitYellow = LoadOrbitSprite("FlowOrbitYellow");
+            orbitGreen = LoadOrbitSprite("FlowOrbitGreen");
+            orbitOrange = LoadOrbitSprite("FlowOrbitOrange");
+            skyBackground = LoadBackgroundSprite("FlowSkyBackground");
         }
 
         private static Sprite LoadBlockSprite(string resourceName)
         {
-            Texture2D texture = Resources.Load<Texture2D>("SquareFlow/Grid/" + resourceName);
+            return LoadResourceSprite("SquareFlow/Grid/" + resourceName, resourceName);
+        }
+
+        private static Sprite LoadOrbitSprite(string resourceName)
+        {
+            return LoadResourceSprite("SquareFlow/Orbits/" + resourceName, resourceName);
+        }
+
+        private static Sprite LoadBackgroundSprite(string resourceName)
+        {
+            return LoadResourceSprite("SquareFlow/Backgrounds/" + resourceName, resourceName);
+        }
+
+        private static Sprite LoadResourceSprite(string resourcePath, string resourceName)
+        {
+            Texture2D texture = Resources.Load<Texture2D>(resourcePath);
             if (texture == null) return null;
 
             texture.wrapMode = TextureWrapMode.Clamp;

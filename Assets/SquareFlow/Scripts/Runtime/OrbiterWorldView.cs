@@ -9,6 +9,7 @@ namespace SquareFlow.Runtime
     public sealed class OrbiterWorldView : MonoBehaviour
     {
         private readonly Dictionary<string, OrbiterView> active = new Dictionary<string, OrbiterView>();
+        private readonly Dictionary<string, Color> activeColors = new Dictionary<string, Color>();
         private readonly Dictionary<string, LaunchState> launches = new Dictionary<string, LaunchState>();
         private readonly Queue<OrbiterView> inactive = new Queue<OrbiterView>();
         private readonly List<string> missing = new List<string>();
@@ -43,9 +44,14 @@ namespace SquareFlow.Runtime
                 view.Root.SetActive(true);
                 view.Root.transform.position = new Vector3(position.x, position.y, -0.25f);
                 view.Root.transform.localScale = Vector3.one * SquareFlowVisualMetrics.ActiveOrbiterWorldScale;
-                view.Glow.color = ColorWithAlpha(ColorForShooter(orbiter.Color, orbiter.Wild, theme), 0.64f);
-                view.Token.color = ColorForShooter(orbiter.Color, orbiter.Wild, theme);
-                RefreshAmmoParticles(view, orbiter.Ammo, world, view.Token.color);
+                Color orbiterColor = ColorForShooter(orbiter.Color, orbiter.Wild, theme);
+                Sprite tokenSprite = SquareFlowWorldSprites.OrbitForShooter(orbiter.Color, orbiter.Wild);
+                bool usesTextureSprite = tokenSprite != SquareFlowWorldSprites.Circle;
+                activeColors[orbiter.Id] = orbiterColor;
+                view.Glow.color = ColorWithAlpha(orbiterColor, 0.64f);
+                view.Token.sprite = tokenSprite;
+                view.Token.color = usesTextureSprite ? Color.white : orbiterColor;
+                RefreshAmmoParticles(view, orbiter.Ammo, world, orbiterColor);
                 RefreshAmmoLabel(view, orbiter, world, tokenSize);
                 view.Token.transform.localScale = Vector3.one * tokenSize;
                 view.Glow.transform.localScale = Vector3.one * (world.CellSize * SquareFlowVisualMetrics.ActiveOrbiterGlowScale);
@@ -57,11 +63,8 @@ namespace SquareFlow.Runtime
 
         public bool TryGetColor(string orbiterId, out Color color)
         {
-            if (active.TryGetValue(orbiterId, out OrbiterView view))
-            {
-                color = view.Token.color;
+            if (activeColors.TryGetValue(orbiterId, out color))
                 return true;
-            }
 
             color = Color.white;
             return false;
@@ -109,6 +112,7 @@ namespace SquareFlow.Runtime
         {
             OrbiterView view = active[id];
             active.Remove(id);
+            activeColors.Remove(id);
             launches.Remove(id);
             view.Root.SetActive(false);
             inactive.Enqueue(view);

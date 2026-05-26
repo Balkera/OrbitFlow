@@ -159,7 +159,8 @@ namespace SquareFlow.Tests
             Assert.That(SquareFlowVisualMetrics.OrbitRingPointCount, Is.GreaterThanOrEqualTo(96));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterTokenScale, Is.GreaterThanOrEqualTo(0.95f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterGlowScale, Is.GreaterThanOrEqualTo(1.5f));
-            Assert.That(SquareFlowVisualMetrics.ActiveOrbiterWorldScale, Is.EqualTo(2f));
+            Assert.That(SquareFlowVisualMetrics.ActiveOrbiterWorldScale, Is.EqualTo(1f));
+            Assert.That(SquareFlowVisualMetrics.ActiveOrbiterTokenScale * SquareFlowVisualMetrics.ActiveOrbiterWorldScale, Is.InRange(0.9f, 1.05f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterLaunchDurationSeconds, Is.EqualTo(0.5f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterAmmoLabelFontSize, Is.EqualTo(1f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterAmmoParticleScale, Is.EqualTo(0.1f));
@@ -294,6 +295,37 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void ShooterTokensUseTextureSpritesByColor()
+        {
+            GameObject host = new GameObject("SquareFlowControllerHost");
+            GameObject selectableParent = new GameObject("SelectableShooterParent", typeof(RectTransform));
+            GameObject wildParent = new GameObject("WildShooterParent", typeof(RectTransform));
+
+            try
+            {
+                SquareFlowGameController controller = host.AddComponent<SquareFlowGameController>();
+                SetPrivateField(controller, "theme", new SquareFlowTheme(true));
+                InvokePrivate(controller, "EnsureRuntimeSprites");
+
+                InvokeAddShooterToken(controller, selectableParent.GetComponent<RectTransform>(), new Shooter("blue", FlowColor.Blue, 3, false), true);
+                Image blueImage = selectableParent.transform.Find("ShooterButton").GetComponent<Image>();
+                Assert.That(blueImage.sprite.texture.name, Is.EqualTo("FlowOrbitBlue"));
+                Assert.That(blueImage.color, Is.EqualTo(Color.white));
+
+                InvokeAddShooterToken(controller, wildParent.GetComponent<RectTransform>(), new Shooter("wild", FlowColor.Wild, 2, true), true);
+                Image wildImage = wildParent.transform.Find("ShooterButton").GetComponent<Image>();
+                Assert.That(wildImage.sprite.texture.name, Is.EqualTo("FlowOrbitOrange"));
+                Assert.That(wildImage.color, Is.EqualTo(Color.white));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+                Object.DestroyImmediate(selectableParent);
+                Object.DestroyImmediate(wildParent);
+            }
+        }
+
+        [Test]
         public void MainMenuPanelStretchesToFillCanvas()
         {
             GameObject host = new GameObject("SquareFlowControllerHost");
@@ -308,11 +340,15 @@ namespace SquareFlow.Tests
 
                 Transform canvas = host.transform.Find("SquareFlowCanvas");
                 Assert.That(canvas, Is.Not.Null);
+                Image canvasBackground = canvas.GetComponent<Image>();
+                Assert.That(canvasBackground.sprite.texture.name, Is.EqualTo("FlowSkyBackground"));
+                Assert.That(canvasBackground.color, Is.EqualTo(Color.white));
                 CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
                 Assert.That(scaler, Is.Not.Null);
                 Assert.That(scaler.matchWidthOrHeight, Is.EqualTo(0f));
                 Transform panel = canvas.Find("MenuPanel");
                 Assert.That(panel, Is.Not.Null);
+                Assert.That(panel.GetComponent<Image>().color.a, Is.EqualTo(0f));
                 RectTransform panelRect = panel.GetComponent<RectTransform>();
 
                 Assert.That(panelRect.anchorMin, Is.EqualTo(Vector2.zero));
@@ -398,8 +434,23 @@ namespace SquareFlow.Tests
 
                 Transform canvas = host.transform.Find("SquareFlowCanvas");
                 Assert.That(canvas, Is.Not.Null);
-                Assert.That(canvas.Find("GameHeader"), Is.Not.Null);
-                Assert.That(canvas.Find("OrbiterStrip"), Is.Not.Null);
+                Image canvasBackground = canvas.GetComponent<Image>();
+                Assert.That(canvasBackground.color.a, Is.EqualTo(0f));
+                Transform worldBackground = host.transform.Find("SquareFlowWorld/WorldBackground");
+                Assert.That(worldBackground, Is.Not.Null);
+                SpriteRenderer worldBackgroundRenderer = worldBackground.GetComponent<SpriteRenderer>();
+                Assert.That(worldBackgroundRenderer.sprite.texture.name, Is.EqualTo("FlowSkyBackground"));
+                Assert.That(worldBackgroundRenderer.sortingOrder, Is.LessThan(0));
+                Transform header = canvas.Find("GameHeader");
+                Assert.That(header, Is.Not.Null);
+                AssertSkyPanel(header, 0.74f);
+                AssertSoftPanelShadow(header);
+
+                Transform orbiterStrip = canvas.Find("OrbiterStrip");
+                Assert.That(orbiterStrip, Is.Not.Null);
+                AssertSkyPanel(orbiterStrip, 0.70f);
+                AssertSoftPanelShadow(orbiterStrip);
+
                 Transform boardFrame = canvas.Find("BoardFrame");
                 Assert.That(boardFrame, Is.Not.Null);
                 RectTransform boardFrameRect = boardFrame.GetComponent<RectTransform>();
@@ -410,6 +461,8 @@ namespace SquareFlow.Tests
 
                 Transform waiting = canvas.Find("WaitingQueue");
                 Assert.That(waiting, Is.Not.Null);
+                AssertSkyPanel(waiting, 0.76f);
+                AssertSoftPanelShadow(waiting);
                 RectTransform waitingRect = waiting.GetComponent<RectTransform>();
                 Assert.That(waitingRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
                 Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
@@ -436,6 +489,12 @@ namespace SquareFlow.Tests
                 RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
                 Assert.That(cards.Length, Is.EqualTo(3));
                 Assert.That(cards[0].sizeDelta, Is.EqualTo(new Vector2(340f, 468f)));
+                for (int i = 0; i < cards.Length; i++)
+                {
+                    AssertSkyPanel(cards[i], 0.78f);
+                    AssertSoftPanelShadow(cards[i]);
+                }
+
                 Assert.That(FindText(cards[0], "A"), Is.Not.Null);
                 Assert.That(FindText(cards[1], "B"), Is.Not.Null);
                 Assert.That(FindText(cards[2], "C"), Is.Not.Null);
@@ -445,6 +504,33 @@ namespace SquareFlow.Tests
             {
                 Object.DestroyImmediate(host);
             }
+        }
+
+        private static void AssertSkyPanel(Transform transform, float expectedAlpha)
+        {
+            Image image = transform.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.color.b, Is.GreaterThan(image.color.g));
+            Assert.That(image.color.g, Is.GreaterThan(image.color.r));
+            Assert.That(image.color.a, Is.EqualTo(expectedAlpha).Within(0.001f));
+        }
+
+        private static void AssertSoftPanelShadow(Transform transform)
+        {
+            Shadow[] shadows = transform.GetComponents<Shadow>();
+            Shadow softShadow = null;
+            for (int i = 0; i < shadows.Length; i++)
+            {
+                if (shadows[i].GetType() == typeof(Shadow))
+                {
+                    softShadow = shadows[i];
+                    break;
+                }
+            }
+
+            Assert.That(softShadow, Is.Not.Null);
+            Assert.That(softShadow.effectColor.a, Is.GreaterThan(0.2f));
+            Assert.That(softShadow.effectDistance.y, Is.LessThan(0f));
         }
 
         private static void AssertTopStartSideSequence(BoardLayout layout, string shapeName)

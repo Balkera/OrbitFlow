@@ -45,6 +45,7 @@ namespace SquareFlow.UI
         private OrbiterWorldView orbiterWorldView;
         private WorldEffectsController worldEffects;
         private MobileWorldLayout worldLayout;
+        private SpriteRenderer worldBackground;
 
         private void Awake()
         {
@@ -77,6 +78,7 @@ namespace SquareFlow.UI
                     bool worldLayoutChanged = UpdateWorldLayout();
                     if (worldLayoutChanged)
                     {
+                        RefreshWorldBackground();
                         boardWorldView.Bind(state, layout, worldLayout, theme);
                         orbitRingWorldView.Bind(layout, worldLayout, theme);
                     }
@@ -118,9 +120,9 @@ namespace SquareFlow.UI
             }
 
             Image background = root.GetComponent<Image>();
-            background.color = theme.Background;
+            ApplyCanvasBackground(background, true);
 
-            RectTransform panel = AddPanel(root, "MenuPanel", Vector2.zero, theme.Background, null);
+            RectTransform panel = AddPanel(root, "MenuPanel", Vector2.zero, Color.clear, null);
             SetStretch(panel);
 
             SquareFlowStartScreenLayout startLayout = SquareFlowStartScreenLayout.Create();
@@ -198,13 +200,14 @@ namespace SquareFlow.UI
             ClearDynamicObjects();
 
             Image background = root.GetComponent<Image>();
-            background.color = Color.clear;
+            ApplyCanvasBackground(background, false);
 
             SquareFlowGameplayScreenLayout screen = SquareFlowGameplayScreenLayout.Create(layout);
             Vector4 safeArea = CurrentSafeAreaPadding();
 
-            RectTransform hud = AddPanel(root, "GameHeader", screen.HudSize, theme.Header, null);
+            RectTransform hud = AddPanel(root, "GameHeader", screen.HudSize, SkyBarColor(0.74f), null);
             SetTopStretch(hud, safeArea.w, screen.HudSize.y, 0f);
+            ApplySoftPanelDepth(hud, 0.30f, 5f);
             AddText(hud, "Square Flow", 38, FontStyle.Bold, theme.Text, new Vector2(-358f, -2f), new Vector2(330f, 70f), TextAnchor.MiddleLeft);
             AddText(hud, state.Shape.Name, 21, FontStyle.Bold, theme.SubtleText, new Vector2(-206f, -2f), new Vector2(152f, 42f));
 
@@ -229,9 +232,10 @@ namespace SquareFlow.UI
 
             RefreshWorldGameplay();
 
-            RectTransform queue = AddPanel(root, "WaitingQueue", screen.QueueSize, ColorWithAlpha(theme.Panel, 0.92f));
+            RectTransform queue = AddPanel(root, "WaitingQueue", screen.QueueSize, SkyBarColor(0.76f));
             SetBottomStretch(queue, safeArea.y + screen.QueueBottomOffset, screen.QueueSize.y, ResponsiveHorizontalMargin);
-            ApplyOutline(queue, ColorWithAlpha(theme.Border, 0.55f), 1f);
+            ApplyOutline(queue, SkyBorderColor(0.44f), 1f);
+            ApplySoftPanelDepth(queue, 0.34f, 7f);
             RenderWaiting(queue);
 
             RectTransform columns = AddContainer(root, "ShooterColumns", screen.DockSize);
@@ -250,6 +254,7 @@ namespace SquareFlow.UI
             UpdateWorldLayout();
             if (!worldLayout.IsValid) return;
             worldRoot.SetActive(true);
+            RefreshWorldBackground();
             boardWorldView.Bind(state, layout, worldLayout, theme);
             orbitRingWorldView.Bind(layout, worldLayout, theme);
             orbiterWorldView.Refresh(state.ActiveOrbiters, worldLayout, theme);
@@ -258,9 +263,10 @@ namespace SquareFlow.UI
         private void RenderOrbiterStrip(SquareFlowGameplayScreenLayout screen)
         {
             Vector4 safeArea = CurrentSafeAreaPadding();
-            RectTransform strip = AddPanel(root, "OrbiterStrip", screen.OrbiterStripSize, ColorWithAlpha(theme.Chip, 0.82f));
+            RectTransform strip = AddPanel(root, "OrbiterStrip", screen.OrbiterStripSize, SkyBarColor(0.70f));
             SetTopStretch(strip, safeArea.w + screen.OrbiterStripTopOffset, screen.OrbiterStripSize.y, ResponsiveHorizontalMargin);
-            ApplyOutline(strip, ColorWithAlpha(theme.Border, 0.46f), 1f);
+            ApplyOutline(strip, SkyBorderColor(0.38f), 1f);
+            ApplySoftPanelDepth(strip, 0.24f, 4f);
             AddText(strip, "ORBITERS", 18, FontStyle.Bold, theme.SubtleText, new Vector2(-420f, -1f), new Vector2(180f, 34f), TextAnchor.MiddleLeft);
 
             int active = state != null ? state.ActiveOrbiters.Count : 0;
@@ -353,9 +359,10 @@ namespace SquareFlow.UI
                 int column = i;
                 float x = startX + i * ShooterColumnSpacing;
                 List<Shooter> shooterColumn = state.ShooterColumns[i];
-                RectTransform card = AddPanel(columns, "ShooterColumnCard", new Vector2(340f, 468f), ColorWithAlpha(theme.Panel, 0.84f));
+                RectTransform card = AddPanel(columns, "ShooterColumnCard", new Vector2(340f, 468f), SkyCardColor(0.78f));
                 SetAnchored(card, new Vector2(x, 0f));
-                ApplyOutline(card, ColorWithAlpha(theme.Border, 0.42f), 1f);
+                ApplyOutline(card, SkyBorderColor(0.36f), 1f);
+                ApplySoftPanelDepth(card, 0.30f, 6f);
                 AddText(card, ((char)('A' + i)).ToString(), 21, FontStyle.Bold, theme.SubtleText, new Vector2(0f, 198f), new Vector2(80f, 32f));
 
                 for (int row = 0; row < visibleRows; row++)
@@ -782,6 +789,10 @@ namespace SquareFlow.UI
             worldRoot = new GameObject("SquareFlowWorld");
             worldRoot.transform.SetParent(transform, false);
 
+            worldBackground = new GameObject("WorldBackground").AddComponent<SpriteRenderer>();
+            worldBackground.transform.SetParent(worldRoot.transform, false);
+            worldBackground.sortingOrder = -100;
+
             boardWorldView = new GameObject("BoardWorldView").AddComponent<BoardWorldView>();
             boardWorldView.transform.SetParent(worldRoot.transform, false);
 
@@ -796,6 +807,37 @@ namespace SquareFlow.UI
 
             worldRoot.SetActive(false);
             mobileCamera.Configure(theme.Background);
+        }
+
+        private void ApplyCanvasBackground(Image background, bool visible)
+        {
+            if (background == null) return;
+
+            Sprite sky = SquareFlowWorldSprites.SkyBackground;
+            background.sprite = sky;
+            background.type = Image.Type.Simple;
+            background.preserveAspect = false;
+            background.color = visible ? sky != null ? Color.white : theme.Background : Color.clear;
+        }
+
+        private void RefreshWorldBackground()
+        {
+            if (worldBackground == null || mobileCamera == null) return;
+
+            Sprite sky = SquareFlowWorldSprites.SkyBackground;
+            if (sky == null)
+            {
+                worldBackground.gameObject.SetActive(false);
+                return;
+            }
+
+            Rect visible = mobileCamera.VisibleWorldRect;
+            worldBackground.gameObject.SetActive(true);
+            worldBackground.sprite = sky;
+            worldBackground.color = Color.white;
+            worldBackground.transform.position = new Vector3(visible.center.x, visible.center.y, 5f);
+            float coverScale = Mathf.Max(visible.width / sky.bounds.size.x, visible.height / sky.bounds.size.y);
+            worldBackground.transform.localScale = Vector3.one * coverScale;
         }
 
         private RectTransform AddPanel(RectTransform parent, string objectName, Vector2 size, Color color)
@@ -895,13 +937,16 @@ namespace SquareFlow.UI
 
             Color textColor = shooter.Hidden || shooter.Wild || shooter.Color == FlowColor.Yellow ? new Color32(26, 23, 64, 255) : Color.white;
             string label = shooter.Hidden ? "?" : Mathf.Max(0, shooter.Ammo).ToString(CultureInfo.InvariantCulture);
-            RectTransform rect = AddPanel(parent, selectable ? "ShooterButton" : "ShooterPreview", size, fill, circleSprite);
+            Sprite tokenSprite = shooter.Hidden ? circleSprite : SquareFlowWorldSprites.OrbitForShooter(shooter.Color, shooter.Wild);
+            bool usesTextureSprite = tokenSprite != null && tokenSprite.texture != null && tokenSprite.texture.name.StartsWith("FlowOrbit");
+            Color tokenColor = usesTextureSprite ? ColorWithAlpha(Color.white, selectable ? 1f : 0.78f) : fill;
+            RectTransform rect = AddPanel(parent, selectable ? "ShooterButton" : "ShooterPreview", size, tokenColor, tokenSprite);
             SetAnchored(rect, position);
 
             Image image = rect.GetComponent<Image>();
             if (image != null)
             {
-                image.sprite = circleSprite;
+                image.sprite = tokenSprite;
                 image.type = Image.Type.Simple;
                 image.raycastTarget = selectable;
             }
@@ -916,7 +961,7 @@ namespace SquareFlow.UI
                 Button button = rect.gameObject.AddComponent<Button>();
                 button.targetGraphic = image;
                 button.onClick.AddListener(action);
-                button.colors = ButtonColors(fill);
+                button.colors = ButtonColors(tokenColor);
             }
         }
 
@@ -968,6 +1013,13 @@ namespace SquareFlow.UI
             outline.effectDistance = new Vector2(distance, -distance);
         }
 
+        private void ApplySoftPanelDepth(RectTransform rect, float alpha, float distance)
+        {
+            Shadow shadow = rect.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = ColorWithAlpha(new Color32(12, 28, 84, 255), alpha);
+            shadow.effectDistance = new Vector2(0f, -distance);
+        }
+
         private ColorBlock ButtonColors(Color baseColor)
         {
             ColorBlock colors = ColorBlock.defaultColorBlock;
@@ -993,6 +1045,21 @@ namespace SquareFlow.UI
         {
             color.a = alpha;
             return color;
+        }
+
+        private static Color SkyBarColor(float alpha)
+        {
+            return ColorWithAlpha(new Color32(45, 91, 177, 255), alpha);
+        }
+
+        private static Color SkyCardColor(float alpha)
+        {
+            return ColorWithAlpha(new Color32(61, 74, 165, 255), alpha);
+        }
+
+        private static Color SkyBorderColor(float alpha)
+        {
+            return ColorWithAlpha(new Color32(207, 231, 255, 255), alpha);
         }
 
         private void EnsureRuntimeSprites()
@@ -1229,7 +1296,7 @@ namespace SquareFlow.UI
         public const float ActiveOrbiterHolderScale = 1.62f;
         public const float ActiveOrbiterGlowScale = 1.52f;
         public const float ActiveOrbiterTokenScale = 0.98f;
-        public const float ActiveOrbiterWorldScale = 2f;
+        public const float ActiveOrbiterWorldScale = 1f;
         public const float ActiveOrbiterLaunchDurationSeconds = 0.5f;
         public const float ActiveOrbiterAmmoLabelFontSize = 1f;
         public const float ActiveOrbiterAmmoParticleScale = 0.1f;

@@ -81,11 +81,11 @@ namespace SquareFlow.Runtime
                 cell.HitFlash.transform.localPosition = new Vector3(0f, 0f, -0.1f);
                 cell.BasePosition = center;
                 Sprite faceSprite = SquareFlowWorldSprites.BlockForCell(boardCell);
-                bool usesTexturedBlock = boardCell.IsOccupied && faceSprite != SquareFlowWorldSprites.RoundedRect;
+                bool usesTexturedSprite = faceSprite != SquareFlowWorldSprites.RoundedRect;
                 cell.Face.sprite = faceSprite;
-                cell.Face.color = usesTexturedBlock ? Color.white : CellColor(boardCell, theme);
-                cell.Depth.gameObject.SetActive(boardCell.IsOccupied && !usesTexturedBlock);
-                cell.Highlight.gameObject.SetActive(boardCell.IsOccupied && !usesTexturedBlock);
+                cell.Face.color = usesTexturedSprite ? Color.white : CellColor(boardCell, theme);
+                cell.Depth.gameObject.SetActive(boardCell.IsOccupied && !usesTexturedSprite);
+                cell.Highlight.gameObject.SetActive(boardCell.IsOccupied && !usesTexturedSprite);
                 cell.Depth.color = boardCell.IsOccupied ? LerpColor(cell.Face.color, Color.black, SquareFlowVisualMetrics.TileDepthDarkenAmount) : Color.clear;
                 cell.Highlight.color = boardCell.IsOccupied ? ColorWithAlpha(Color.white, SquareFlowVisualMetrics.TileTopHighlightAlpha) : Color.clear;
                 cell.Label.text = LabelForCell(boardCell);
