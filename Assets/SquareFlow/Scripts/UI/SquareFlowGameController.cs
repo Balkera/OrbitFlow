@@ -162,7 +162,8 @@ namespace SquareFlow.UI
 
             BoardShape shape = BoardShapeCatalog.GetShape(saveData.Level);
 
-            RectTransform titleGlow = AddPanel(content, "MenuTitleGlow", new Vector2(360f, 66f), ColorWithAlpha(theme.TitleGlow, 0f));
+            RectTransform titleGlow = AddPanel(content, "MenuTitleGlow", new Vector2(520f, 104f), ColorWithAlpha(theme.TitleGlow, 0f));
+            ApplyGuiProPanelSkin(titleGlow, guiProTitleRibbonSprite, ColorWithAlpha(theme.TitleGlow, 0.18f));
             SetAnchored(titleGlow, startLayout.TitlePosition + new Vector2(0f, -2f));
             SetRaycastTarget(titleGlow, false);
             AddText(content, "Square Flow", 84, FontStyle.Bold, theme.Text, startLayout.TitlePosition, new Vector2(820f, 116f));
@@ -170,6 +171,7 @@ namespace SquareFlow.UI
             AddThemeToggle(content, startLayout.ThemeTogglePosition);
 
             RectTransform stats = AddPanel(content, "MenuStatsCard", startLayout.StatsSize, ColorWithAlpha(theme.Panel, 0.94f));
+            ApplyGuiProPanelSkin(stats, guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.94f));
             SetAnchored(stats, startLayout.StatsPosition);
             ApplyOutline(stats, ColorWithAlpha(theme.Border, 0.58f), 1f);
             AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-360f, -2f), theme.Score);
@@ -180,10 +182,13 @@ namespace SquareFlow.UI
             AddButton(stats, "Reset All", new Vector2(424f, -48f), new Vector2(144f, 46f), ColorWithAlpha(theme.Red, 0.14f), theme.Red, ResetProgress, 15).gameObject.name = "ResetAllButton";
 
             RectTransform selector = AddContainer(content, "LevelSelector", startLayout.LevelSelectorSize);
+            ApplyGuiProPanelSkin(selector, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.62f));
+            SetRaycastTarget(selector, false);
             SetAnchored(selector, startLayout.LevelSelectorPosition);
             RenderLevelSelector(selector);
 
             RectTransform instructions = AddPanel(content, "InstructionsCard", startLayout.InstructionsSize, ColorWithAlpha(theme.Panel, 0.74f));
+            ApplyGuiProPanelSkin(instructions, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.74f));
             SetAnchored(instructions, startLayout.InstructionsPosition);
             ApplyOutline(instructions, ColorWithAlpha(theme.Border, 0.52f), 1f);
             AddText(instructions, "Orbit shooters around shaped boards. Clear all blocks to win.", 25, FontStyle.Normal, theme.Text, new Vector2(0f, 80f), new Vector2(790f, 44f));
@@ -568,6 +573,7 @@ namespace SquareFlow.UI
             }
 
             RectTransform panel = AddPanel(root, "ResultPanel", new Vector2(600f, 330f), theme.Panel);
+            ApplyGuiProPanelSkin(panel, guiProPanelSprite, theme.Panel);
             SetAnchored(panel, new Vector2(0f, 72f));
             ApplyOutline(panel, ColorWithAlpha(theme.Score, 0.32f), 2f);
             AddText(panel, ResultTitle(), 42, FontStyle.Bold, theme.Text, new Vector2(0f, 100f), new Vector2(520f, 64f));
@@ -993,9 +999,10 @@ namespace SquareFlow.UI
 
         private RectTransform AddGlassPanel(RectTransform parent, string objectName, Vector2 size)
         {
-            RectTransform panel = AddPanel(parent, objectName, size, Color.white, glassPanelSprite != null ? glassPanelSprite : roundedRectSprite);
+            Sprite sprite = guiProPanelSprite != null ? guiProPanelSprite : glassPanelSprite != null ? glassPanelSprite : roundedRectSprite;
+            RectTransform panel = AddPanel(parent, objectName, size, Color.white, sprite);
+            ApplyGuiProPanelSkin(panel, sprite, Color.white);
             ApplyOutline(panel, ColorWithAlpha(Color.white, 0.50f), 1f);
-            ApplySoftPanelDepth(panel, 0.28f, 8f);
             SetRaycastTarget(panel, false);
             return panel;
         }
@@ -1066,15 +1073,65 @@ namespace SquareFlow.UI
             return AddButton(parent, label, position, size, color, textColor, action, 18);
         }
 
+        private Sprite ButtonSpriteForLabel(string label, Vector2 size)
+        {
+            if (label == "Play" || label == "Next Level" || label == "Try Again")
+                return guiProPlayButtonSprite != null ? guiProPlayButtonSprite : guiProConfirmButtonSprite;
+
+            if (label == "Reset All")
+                return guiProDangerButtonSprite;
+
+            if (size.x <= 100f && size.y <= 70f)
+                return GuiProActionButtonSprite();
+
+            if (size.x <= 180f || size.y <= 70f)
+                return guiProSmallButtonSprite != null ? guiProSmallButtonSprite : GuiProActionButtonSprite();
+
+            return guiProPrimaryButtonSprite;
+        }
+
+        private void ApplyGuiProPanelSkin(RectTransform rect, Sprite sprite, Color fallbackColor)
+        {
+            if (rect == null) return;
+
+            Image image = rect.GetComponent<Image>();
+            if (image == null)
+                image = rect.gameObject.AddComponent<Image>();
+
+            if (sprite != null)
+            {
+                image.sprite = sprite;
+                image.type = HasSpriteBorder(sprite) ? Image.Type.Sliced : Image.Type.Simple;
+                image.color = Color.white;
+            }
+            else
+            {
+                image.color = fallbackColor;
+            }
+
+            EnsureSoftPanelDepth(rect, 0.28f, 8f);
+        }
+
+        private Sprite GuiProActionButtonSprite()
+        {
+            if (guiProActionButtonBlueSprite != null) return guiProActionButtonBlueSprite;
+            if (guiProActionButtonGreenSprite != null) return guiProActionButtonGreenSprite;
+            if (guiProActionButtonYellowSprite != null) return guiProActionButtonYellowSprite;
+            if (guiProActionButtonRedSprite != null) return guiProActionButtonRedSprite;
+            return null;
+        }
+
         private Button AddButton(RectTransform parent, string label, Vector2 position, Vector2 size, Color color, Color textColor, UnityEngine.Events.UnityAction action, int fontSize)
         {
-            RectTransform rect = AddPanel(parent, "Button", size, color);
+            Sprite sprite = ButtonSpriteForLabel(label, size);
+            Color buttonColor = sprite != null ? Color.white : color;
+            RectTransform rect = AddPanel(parent, "Button", size, buttonColor, sprite != null ? sprite : roundedRectSprite);
             SetAnchored(rect, position);
 
             Button button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = rect.GetComponent<Image>();
             button.onClick.AddListener(action);
-            button.colors = ButtonColors(color);
+            button.colors = ButtonColors(buttonColor);
             ApplyOutline(rect, ColorWithAlpha(Color.white, 0.26f), 1f);
 
             TMP_Text text = AddText(rect, label, fontSize, FontStyle.Bold, textColor, Vector2.zero, size);
@@ -1084,16 +1141,27 @@ namespace SquareFlow.UI
 
         private Button AddSpriteButton(RectTransform parent, string objectName, Vector2 position, Vector2 size, Sprite sprite, UnityEngine.Events.UnityAction action)
         {
-            RectTransform rect = AddPanel(parent, objectName, size, Color.white, sprite);
+            Sprite frameSprite = GuiProActionButtonSprite();
+            RectTransform rect = AddPanel(parent, objectName, size, Color.white, frameSprite != null ? frameSprite : sprite);
             SetAnchored(rect, position);
 
             Image image = rect.GetComponent<Image>();
-            image.preserveAspect = true;
+            image.preserveAspect = frameSprite == null;
 
             Button button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             button.onClick.AddListener(action);
             button.colors = SpriteButtonColors();
+
+            if (frameSprite != null && sprite != null)
+            {
+                RectTransform icon = AddPanel(rect, "Icon", size * 0.58f, Color.white, sprite);
+                SetAnchored(icon, Vector2.zero);
+                Image iconImage = icon.GetComponent<Image>();
+                iconImage.preserveAspect = true;
+                iconImage.raycastTarget = false;
+            }
+
             return button;
         }
 
@@ -1193,6 +1261,18 @@ namespace SquareFlow.UI
             Shadow shadow = rect.gameObject.AddComponent<Shadow>();
             shadow.effectColor = ColorWithAlpha(new Color32(12, 28, 84, 255), alpha);
             shadow.effectDistance = new Vector2(0f, -distance);
+        }
+
+        private void EnsureSoftPanelDepth(RectTransform rect, float alpha, float distance)
+        {
+            Shadow[] shadows = rect.GetComponents<Shadow>();
+            for (int i = 0; i < shadows.Length; i++)
+            {
+                if (shadows[i].GetType() == typeof(Shadow))
+                    return;
+            }
+
+            ApplySoftPanelDepth(rect, alpha, distance);
         }
 
         private ColorBlock ButtonColors(Color baseColor)
