@@ -722,7 +722,9 @@ namespace SquareFlow.Tests
                 Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
                 Assert.That(waitingRect.sizeDelta, Is.EqualTo(new Vector2(-16f, 164f)));
                 Assert.That(waitingRect.offsetMin.x, Is.EqualTo(8f));
+                Assert.That(waitingRect.offsetMin.y, Is.EqualTo(500f));
                 Assert.That(waitingRect.offsetMax.x, Is.EqualTo(-8f));
+                Assert.That(waitingRect.offsetMax.y, Is.EqualTo(664f));
 
                 RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
                 Assert.That(cards.Length, Is.EqualTo(3));
