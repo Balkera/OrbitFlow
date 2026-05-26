@@ -190,15 +190,17 @@ namespace SquareFlow.Tests
             SquareFlowGameplayScreenLayout layout = SquareFlowGameplayScreenLayout.Create(board);
 
             Assert.That(layout.HudSize.x, Is.EqualTo(1080f));
-            Assert.That(layout.HudSize.y, Is.EqualTo(96f));
-            Assert.That(layout.HudPosition, Is.EqualTo(new Vector2(0f, 904f)));
-            Assert.That(layout.ActionSize.x, Is.EqualTo(560f));
-            Assert.That(layout.ActionPosition.x, Is.EqualTo(270f));
+            Assert.That(layout.HudSize.y, Is.EqualTo(128f));
+            Assert.That(layout.HudPosition, Is.EqualTo(new Vector2(0f, 896f)));
+            Assert.That(layout.StatusBarSize, Is.EqualTo(new Vector2(1080f, 86f)));
+            Assert.That(layout.StatusBarTopOffset, Is.EqualTo(136f));
+            Assert.That(layout.ActionSize.x, Is.EqualTo(360f));
+            Assert.That(layout.ActionPosition.x, Is.EqualTo(344f));
             Assert.That(layout.ActionPosition.y, Is.EqualTo(0f));
-            Assert.That(layout.UtilityButtonSize, Is.EqualTo(new Vector2(78f, 66f)));
+            Assert.That(layout.UtilityButtonSize, Is.EqualTo(new Vector2(78f, 78f)));
             Assert.That(layout.OrbiterStripSize, Is.EqualTo(new Vector2(1064f, 92f)));
-            Assert.That(layout.OrbiterStripPosition, Is.EqualTo(new Vector2(0f, 797f)));
-            Assert.That(layout.OrbiterStripTopOffset, Is.EqualTo(204f));
+            Assert.That(layout.OrbiterStripPosition, Is.EqualTo(new Vector2(0f, 678f)));
+            Assert.That(layout.OrbiterStripTopOffset, Is.EqualTo(236f));
             Assert.That(layout.BoardPanelSize, Is.EqualTo(new Vector2(1080f, 1080f)));
             Assert.That(layout.BoardPanelPosition, Is.EqualTo(new Vector2(0f, 130f)));
             Assert.That(layout.QueueSize.x, Is.EqualTo(1064f));
@@ -504,37 +506,60 @@ namespace SquareFlow.Tests
                 SpriteRenderer worldBackgroundRenderer = worldBackground.GetComponent<SpriteRenderer>();
                 Assert.That(worldBackgroundRenderer.sprite.texture.name, Is.EqualTo("FlowSkyBackground"));
                 Assert.That(worldBackgroundRenderer.sortingOrder, Is.LessThan(0));
+                Transform worldBoardPanel = host.transform.Find("SquareFlowWorld/WorldBoardPanel");
+                Assert.That(worldBoardPanel, Is.Not.Null);
+                SpriteRenderer worldBoardPanelRenderer = worldBoardPanel.GetComponent<SpriteRenderer>();
+                Assert.That(worldBoardPanelRenderer, Is.Not.Null);
+                Assert.That(worldBoardPanelRenderer.sprite.texture.name, Is.Not.EqualTo("FlowPanel"));
+                Assert.That(worldBoardPanelRenderer.sortingOrder, Is.LessThan(-2));
+                Assert.That(worldBoardPanelRenderer.color.b, Is.GreaterThan(worldBoardPanelRenderer.color.g));
+                Assert.That(worldBoardPanelRenderer.color.g, Is.GreaterThan(worldBoardPanelRenderer.color.r));
+                Assert.That(worldBoardPanelRenderer.color.a, Is.GreaterThan(0.35f));
                 Transform header = canvas.Find("GameHeader");
                 Assert.That(header, Is.Not.Null);
-                AssertSkyPanel(header, 0.74f);
-                AssertSoftPanelShadow(header);
+                Assert.That(header.GetComponent<Image>(), Is.Null);
+                Transform scoreCard = header.Find("ScoreCard");
+                Transform bestCard = header.Find("BestCard");
+                AssertGlassPanel(scoreCard);
+                AssertGlassPanel(bestCard);
+                Assert.That(FindText(scoreCard, "SCORE"), Is.Not.Null);
+                Assert.That(FindText(bestCard, "BEST"), Is.Not.Null);
+                AssertHeaderIcon(scoreCard, "FlowCrown");
+                AssertHeaderIcon(bestCard, "FlowGem");
+                AssertGlassPanel(header.Find("LevelBadge"));
+                Assert.That(FindText(scoreCard, "0"), Is.Not.Null);
 
                 Transform status = canvas.Find("GameStatusBar");
                 Assert.That(status, Is.Not.Null);
+                AssertGlassPanel(status);
+                Transform hudActions = status.Find("HudActions");
+                Assert.That(hudActions, Is.Not.Null);
+                AssertSpriteButton(hudActions.Find("HomeButton"), "FlowHomeButton");
+                AssertSpriteButton(hudActions.Find("RestartButton"), "FlowRestartButton");
+                AssertSpriteButton(hudActions.Find("PaletteButton"), "FlowPaletteButton");
+                AssertSpriteButton(hudActions.Find("MuteButton"), "FlowMuteButton");
 
                 Transform orbiterStrip = canvas.Find("OrbiterStrip");
                 Assert.That(orbiterStrip, Is.Not.Null);
-                AssertSkyPanel(orbiterStrip, 0.70f);
-                AssertSoftPanelShadow(orbiterStrip);
+                AssertGlassPanel(orbiterStrip);
                 Transform boardFrame = canvas.Find("BoardFrame");
                 Assert.That(boardFrame, Is.Not.Null);
                 RectTransform boardFrameRect = boardFrame.GetComponent<RectTransform>();
                 Assert.That(boardFrameRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 130f)));
                 Image boardFrameImage = boardFrame.GetComponent<Image>();
+                Assert.That(boardFrameImage, Is.Not.Null);
                 Assert.That(boardFrameImage.color.a, Is.EqualTo(0f));
                 Assert.That(boardFrameImage.raycastTarget, Is.False);
 
                 RectTransform titleBarRect = canvas.Find("GameHeader").GetComponent<RectTransform>();
                 RectTransform statusBarRect = status.GetComponent<RectTransform>();
-                Assert.That(titleBarRect.sizeDelta.y, Is.EqualTo(96f));
+                Assert.That(titleBarRect.sizeDelta.y, Is.EqualTo(128f));
                 Assert.That(statusBarRect.sizeDelta.y, Is.EqualTo(86f));
-                Assert.That(statusBarRect.anchoredPosition.y, Is.EqualTo(-104f));
+                Assert.That(statusBarRect.anchoredPosition.y, Is.EqualTo(-136f));
 
-                TMP_Text score = FindText(status, "0");
-                TMP_Text menu = FindText(status, "Menu");
-                Assert.That(score, Is.Not.Null);
-                Assert.That(menu, Is.Not.Null);
-                Assert.That(RightEdge(score.rectTransform), Is.LessThan(LeftEdge(menu.rectTransform)));
+                TMP_Text moves = FindText(status, "0 moves");
+                Assert.That(moves, Is.Not.Null);
+                Assert.That(RightEdge(moves.rectTransform), Is.LessThan(LeftEdge(hudActions.GetComponent<RectTransform>())));
 
                 Transform strip = canvas.Find("OrbiterStrip");
                 TMP_Text orbiterLabel = FindText(strip, "ORBITERS");
@@ -546,8 +571,7 @@ namespace SquareFlow.Tests
 
                 Transform waiting = canvas.Find("WaitingQueue");
                 Assert.That(waiting, Is.Not.Null);
-                AssertSkyPanel(waiting, 0.76f);
-                AssertSoftPanelShadow(waiting);
+                AssertGlassPanel(waiting);
                 RectTransform waitingRect = waiting.GetComponent<RectTransform>();
                 Assert.That(waitingRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
                 Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
@@ -580,10 +604,7 @@ namespace SquareFlow.Tests
                 Assert.That(cards.Length, Is.EqualTo(3));
                 Assert.That(cards[0].sizeDelta, Is.EqualTo(new Vector2(340f, 468f)));
                 for (int i = 0; i < cards.Length; i++)
-                {
-                    AssertSkyPanel(cards[i], 0.78f);
-                    AssertSoftPanelShadow(cards[i]);
-                }
+                    AssertGlassPanel(cards[i]);
 
                 RectTransform firstDockSlot = cards[0].Find("DockSlotFront").GetComponent<RectTransform>();
                 Assert.That(firstDockSlot.sizeDelta, Is.EqualTo(Vector2.one * 112f));
@@ -618,6 +639,41 @@ namespace SquareFlow.Tests
             Assert.That(image.color.b, Is.GreaterThan(image.color.g));
             Assert.That(image.color.g, Is.GreaterThan(image.color.r));
             Assert.That(image.color.a, Is.EqualTo(expectedAlpha).Within(0.001f));
+        }
+
+        private static void AssertGlassPanel(Transform transform)
+        {
+            Assert.That(transform, Is.Not.Null);
+            Image image = transform.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.sprite, Is.Not.Null);
+            Assert.That(image.sprite.texture.name, Is.EqualTo("FlowPanel"));
+            Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
+            Assert.That(image.color, Is.EqualTo(Color.white));
+            AssertSoftPanelShadow(transform);
+        }
+
+        private static void AssertHeaderIcon(Transform card, string expectedTextureName)
+        {
+            Transform icon = card.Find("HeaderIcon");
+            Assert.That(icon, Is.Not.Null);
+            Image image = icon.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.sprite, Is.Not.Null);
+            Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
+            Assert.That(image.preserveAspect, Is.True);
+            Assert.That(image.raycastTarget, Is.False);
+        }
+
+        private static void AssertSpriteButton(Transform button, string expectedTextureName)
+        {
+            Assert.That(button, Is.Not.Null);
+            Image image = button.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.sprite, Is.Not.Null);
+            Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
+            Assert.That(image.preserveAspect, Is.True);
+            Assert.That(button.GetComponent<Button>(), Is.Not.Null);
         }
 
         private static void AssertSoftPanelShadow(Transform transform)
