@@ -1405,6 +1405,35 @@ namespace SquareFlow.UI
             return sprite != null && (sprite.border.x > 0f || sprite.border.y > 0f || sprite.border.z > 0f || sprite.border.w > 0f);
         }
 
+        private static Vector4 ClampSlicedSpriteBorder(Texture2D texture, Vector4 border)
+        {
+            if (texture == null) return Vector4.zero;
+
+            Vector2 horizontal = ClampBorderPair(border.x, border.z, texture.width);
+            Vector2 vertical = ClampBorderPair(border.y, border.w, texture.height);
+            return new Vector4(horizontal.x, vertical.x, horizontal.y, vertical.y);
+        }
+
+        private static Vector2 ClampBorderPair(float leading, float trailing, int textureSize)
+        {
+            leading = Mathf.Max(0f, leading);
+            trailing = Mathf.Max(0f, trailing);
+
+            if (textureSize <= 0)
+                return Vector2.zero;
+
+            float maxBorderTotal = Mathf.Max(0f, textureSize - 1f);
+            float total = leading + trailing;
+            if (total <= maxBorderTotal)
+                return new Vector2(leading, trailing);
+
+            if (total <= 0f || maxBorderTotal <= 0f)
+                return Vector2.zero;
+
+            float scale = maxBorderTotal / total;
+            return new Vector2(leading * scale, trailing * scale);
+        }
+
         private static Sprite LoadSlicedUiSprite(string resourcePath, string spriteName, Vector4 border, float pixelsPerUnit)
         {
             Texture2D texture = Resources.Load<Texture2D>(resourcePath);
@@ -1412,6 +1441,7 @@ namespace SquareFlow.UI
 
             texture.wrapMode = TextureWrapMode.Clamp;
             texture.filterMode = FilterMode.Bilinear;
+            border = ClampSlicedSpriteBorder(texture, border);
 
             Sprite sprite = Sprite.Create(
                 texture,
