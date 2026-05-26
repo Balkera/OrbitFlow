@@ -713,8 +713,29 @@ namespace SquareFlow.Tests
                     new Vector2(0f, 128f),
                     new Vector2(0f, -128f),
                     Vector2.zero);
+                AssertRectTransformLayout(
+                    header.Find("ScoreCard"),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(330f, 104f),
+                    new Vector2(-527f, -52f),
+                    new Vector2(-197f, 52f));
                 AssertGuiProPanel(header.Find("ScoreCard"));
+                AssertRectTransformLayout(
+                    header.Find("BestCard"),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(286f, 104f),
+                    new Vector2(-183f, -52f),
+                    new Vector2(103f, 52f));
                 AssertGuiProPanel(header.Find("BestCard"));
+                AssertRectTransformLayout(
+                    header.Find("LevelBadge"),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(122f, 92f),
+                    new Vector2(217f, -46f),
+                    new Vector2(339f, 46f));
                 AssertGuiProPanel(header.Find("LevelBadge"));
                 AssertGuiProPanel(status);
                 AssertGuiProPanel(orbiterStrip);
@@ -819,7 +840,14 @@ namespace SquareFlow.Tests
 
         private static void AssertGlassPanel(Transform transform)
         {
-            AssertGuiProPanel(transform);
+            Assert.That(transform, Is.Not.Null);
+            Image image = transform.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.sprite, Is.Not.Null);
+            Assert.That(image.sprite.texture.name, Is.EqualTo("FlowPanel"));
+            Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
+            Assert.That(image.color, Is.EqualTo(Color.white));
+            AssertSoftPanelShadow(transform);
         }
 
         private static void AssertGuiProFont(TMP_Text text)
@@ -838,6 +866,7 @@ namespace SquareFlow.Tests
             Assert.That(image.sprite, Is.Not.Null);
             Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
             Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
+            Assert.That(image.color, Is.EqualTo(Color.white));
             AssertSoftPanelShadow(transform);
         }
 
