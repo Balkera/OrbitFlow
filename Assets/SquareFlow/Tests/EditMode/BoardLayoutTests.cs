@@ -190,17 +190,17 @@ namespace SquareFlow.Tests
             SquareFlowGameplayScreenLayout layout = SquareFlowGameplayScreenLayout.Create(board);
 
             Assert.That(layout.HudSize.x, Is.EqualTo(1080f));
-            Assert.That(layout.HudSize.y, Is.EqualTo(112f));
+            Assert.That(layout.HudSize.y, Is.EqualTo(96f));
             Assert.That(layout.HudPosition, Is.EqualTo(new Vector2(0f, 904f)));
-            Assert.That(layout.ActionSize.x, Is.EqualTo(430f));
-            Assert.That(layout.ActionPosition.x, Is.EqualTo(330f));
+            Assert.That(layout.ActionSize.x, Is.EqualTo(560f));
+            Assert.That(layout.ActionPosition.x, Is.EqualTo(270f));
             Assert.That(layout.ActionPosition.y, Is.EqualTo(0f));
-            Assert.That(layout.UtilityButtonSize, Is.EqualTo(new Vector2(72f, 62f)));
-            Assert.That(layout.OrbiterStripSize, Is.EqualTo(new Vector2(1064f, 70f)));
+            Assert.That(layout.UtilityButtonSize, Is.EqualTo(new Vector2(78f, 66f)));
+            Assert.That(layout.OrbiterStripSize, Is.EqualTo(new Vector2(1064f, 92f)));
             Assert.That(layout.OrbiterStripPosition, Is.EqualTo(new Vector2(0f, 797f)));
-            Assert.That(layout.OrbiterStripTopOffset, Is.EqualTo(128f));
+            Assert.That(layout.OrbiterStripTopOffset, Is.EqualTo(204f));
             Assert.That(layout.BoardPanelSize, Is.EqualTo(new Vector2(1080f, 1080f)));
-            Assert.That(layout.BoardPanelPosition, Is.EqualTo(new Vector2(0f, 260f)));
+            Assert.That(layout.BoardPanelPosition, Is.EqualTo(new Vector2(0f, 130f)));
             Assert.That(layout.QueueSize.x, Is.EqualTo(1064f));
             Assert.That(layout.QueueSize.y, Is.EqualTo(164f));
             Assert.That(layout.QueuePosition.x, Is.EqualTo(0f));
@@ -261,6 +261,7 @@ namespace SquareFlow.Tests
             GameObject host = new GameObject("SquareFlowControllerHost");
             GameObject selectableParent = new GameObject("SelectableShooterParent", typeof(RectTransform));
             GameObject queuedParent = new GameObject("QueuedShooterParent", typeof(RectTransform));
+            GameObject hiddenParent = new GameObject("HiddenShooterParent", typeof(RectTransform));
 
             try
             {
@@ -285,12 +286,61 @@ namespace SquareFlow.Tests
                 Assert.That(queuedDots, Is.Null);
                 Assert.That(queuedLabel.text, Is.EqualTo("2"));
                 Assert.That(queuedLabel.fontSize, Is.EqualTo(SquareFlowVisualMetrics.ShooterAmmoLabelQueuedFontSize));
+
+                InvokeAddShooterToken(controller, hiddenParent.GetComponent<RectTransform>(), new Shooter("hidden", FlowColor.Green, 6, false, true), false);
+                Transform hiddenToken = hiddenParent.transform.Find("ShooterPreview");
+                Image hiddenImage = hiddenToken.GetComponent<Image>();
+                TMP_Text hiddenLabel = hiddenToken.Find("AmmoLabel").GetComponent<TMP_Text>();
+                Assert.That(hiddenImage.sprite.texture.name, Is.EqualTo("SquareFlowShooterCircle"));
+                Assert.That(hiddenImage.color.a, Is.GreaterThanOrEqualTo(0.76f));
+                Assert.That(hiddenLabel.text, Is.EqualTo("?"));
             }
             finally
             {
                 Object.DestroyImmediate(host);
                 Object.DestroyImmediate(selectableParent);
                 Object.DestroyImmediate(queuedParent);
+                Object.DestroyImmediate(hiddenParent);
+            }
+        }
+
+        [Test]
+        public void WaitingQueueUsesFixedFullSizeShooterTokensWithoutInheritedScale()
+        {
+            GameObject host = new GameObject("SquareFlowControllerHost");
+            GameObject queueObject = new GameObject("WaitingQueueTest", typeof(RectTransform));
+
+            try
+            {
+                SquareFlowGameController controller = host.AddComponent<SquareFlowGameController>();
+                if (host.transform.Find("SquareFlowCanvas") == null)
+                    InvokePrivate(controller, "Awake");
+
+                BoardShape shape = BoardShapeCatalog.GetShape(1);
+                GameState state = GameState.Create(shape, new BoardCell[shape.Rows, shape.Cols], new List<Shooter>[0], 1);
+                state.WaitingQueue.Add(new Shooter("wait-a", FlowColor.Green, 2, false));
+                state.WaitingQueue.Add(new Shooter("wait-b", FlowColor.Blue, 1, false));
+                SetPrivateField(controller, "state", state);
+
+                RectTransform queue = queueObject.GetComponent<RectTransform>();
+                InvokePrivate(controller, "RenderWaiting", queue);
+
+                RectTransform[] waitingSlots = NamedChildren(queue, "WaitingSlot");
+                Assert.That(waitingSlots.Length, Is.EqualTo(SquareFlowConstants.WaitQueueLimit));
+                Assert.That(waitingSlots[0].sizeDelta, Is.EqualTo(Vector2.one * 112f));
+                Assert.That(waitingSlots[0].localScale, Is.EqualTo(Vector3.one));
+
+                RectTransform[] waitingButtons = NamedChildren(queue, "ShooterButton");
+                Assert.That(waitingButtons.Length, Is.EqualTo(2));
+                Assert.That(waitingButtons[0].sizeDelta, Is.EqualTo(Vector2.one * 112f));
+                Assert.That(waitingButtons[0].localScale, Is.EqualTo(Vector3.one));
+                Assert.That(waitingButtons[1].anchoredPosition.x - waitingButtons[0].anchoredPosition.x, Is.EqualTo(128f).Within(0.001f));
+                Assert.That(RightEdge(waitingButtons[0]), Is.LessThan(LeftEdge(waitingButtons[1])));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+                Object.DestroyImmediate(queueObject);
             }
         }
 
@@ -345,7 +395,7 @@ namespace SquareFlow.Tests
                 Assert.That(canvasBackground.color, Is.EqualTo(Color.white));
                 CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
                 Assert.That(scaler, Is.Not.Null);
-                Assert.That(scaler.matchWidthOrHeight, Is.EqualTo(0f));
+                Assert.That(scaler.screenMatchMode, Is.EqualTo(CanvasScaler.ScreenMatchMode.Expand));
                 Transform panel = canvas.Find("MenuPanel");
                 Assert.That(panel, Is.Not.Null);
                 Assert.That(panel.GetComponent<Image>().color.a, Is.EqualTo(0f));
@@ -421,6 +471,19 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void ExpandedCanvasKeepsGameplayBandsSeparatedOnPhonesAndTablets()
+        {
+            BoardLayout board = BoardLayout.Compute(5, 5, 620f);
+            Vector2 referenceResolution = new Vector2(1080f, 1920f);
+
+            AssertGameplayBandsDoNotOverlap("iPhone 14 Pro Max", new Vector2(1290f, 2796f), referenceResolution, board);
+            AssertGameplayBandsDoNotOverlap("iPad Pro 12.9", new Vector2(2048f, 2732f), referenceResolution, board);
+            AssertGameplayBandsDoNotOverlap("iPad 10.9", new Vector2(1640f, 2360f), referenceResolution, board);
+            AssertGameplayBandsDoNotOverlap("Galaxy Tab portrait", new Vector2(1600f, 2560f), referenceResolution, board);
+            AssertGameplayBandsDoNotOverlap("simulator tablet safe area", new Vector2(1768f, 2208f), referenceResolution, board, 76.52f, 0f);
+        }
+
+        [Test]
         public void GameplayViewBuildsFigmaReferencePanelsAndHorizontalQueues()
         {
             GameObject host = new GameObject("SquareFlowControllerHost");
@@ -446,18 +509,40 @@ namespace SquareFlow.Tests
                 AssertSkyPanel(header, 0.74f);
                 AssertSoftPanelShadow(header);
 
+                Transform status = canvas.Find("GameStatusBar");
+                Assert.That(status, Is.Not.Null);
+
                 Transform orbiterStrip = canvas.Find("OrbiterStrip");
                 Assert.That(orbiterStrip, Is.Not.Null);
                 AssertSkyPanel(orbiterStrip, 0.70f);
                 AssertSoftPanelShadow(orbiterStrip);
-
                 Transform boardFrame = canvas.Find("BoardFrame");
                 Assert.That(boardFrame, Is.Not.Null);
                 RectTransform boardFrameRect = boardFrame.GetComponent<RectTransform>();
-                Assert.That(boardFrameRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 260f)));
+                Assert.That(boardFrameRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 130f)));
                 Image boardFrameImage = boardFrame.GetComponent<Image>();
                 Assert.That(boardFrameImage.color.a, Is.EqualTo(0f));
                 Assert.That(boardFrameImage.raycastTarget, Is.False);
+
+                RectTransform titleBarRect = canvas.Find("GameHeader").GetComponent<RectTransform>();
+                RectTransform statusBarRect = status.GetComponent<RectTransform>();
+                Assert.That(titleBarRect.sizeDelta.y, Is.EqualTo(96f));
+                Assert.That(statusBarRect.sizeDelta.y, Is.EqualTo(86f));
+                Assert.That(statusBarRect.anchoredPosition.y, Is.EqualTo(-104f));
+
+                TMP_Text score = FindText(status, "0");
+                TMP_Text menu = FindText(status, "Menu");
+                Assert.That(score, Is.Not.Null);
+                Assert.That(menu, Is.Not.Null);
+                Assert.That(RightEdge(score.rectTransform), Is.LessThan(LeftEdge(menu.rectTransform)));
+
+                Transform strip = canvas.Find("OrbiterStrip");
+                TMP_Text orbiterLabel = FindText(strip, "ORBITERS");
+                Assert.That(orbiterLabel, Is.Not.Null);
+                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(2.94f).Within(0.001f));
+                RectTransform[] orbiterDots = NamedChildren(strip, "OrbiterDot");
+                Assert.That(orbiterDots.Length, Is.EqualTo(SquareFlowConstants.MaxActiveOrbiters));
+                Assert.That(orbiterDots[0].localScale.x, Is.EqualTo(2.94f).Within(0.001f));
 
                 Transform waiting = canvas.Find("WaitingQueue");
                 Assert.That(waiting, Is.Not.Null);
@@ -472,6 +557,11 @@ namespace SquareFlow.Tests
 
                 RectTransform[] waitingSlots = NamedChildren(waiting, "WaitingSlot");
                 Assert.That(waitingSlots.Length, Is.EqualTo(SquareFlowConstants.WaitQueueLimit));
+                Assert.That(waitingSlots[0].sizeDelta, Is.EqualTo(Vector2.one * 112f));
+                Assert.That(waitingSlots[0].localScale, Is.EqualTo(Vector3.one));
+                TMP_Text waitingLabel = FindText(waiting, "WAITING 0/5");
+                Assert.That(waitingLabel, Is.Not.Null);
+                Assert.That(waitingLabel.rectTransform.localScale.x, Is.EqualTo(2.08f).Within(0.001f));
                 float waitingY = waitingSlots[0].anchoredPosition.y;
                 for (int i = 0; i < waitingSlots.Length; i++)
                 {
@@ -495,6 +585,21 @@ namespace SquareFlow.Tests
                     AssertSoftPanelShadow(cards[i]);
                 }
 
+                RectTransform firstDockSlot = cards[0].Find("DockSlotFront").GetComponent<RectTransform>();
+                Assert.That(firstDockSlot.sizeDelta, Is.EqualTo(Vector2.one * 112f));
+                Assert.That(firstDockSlot.localScale, Is.EqualTo(Vector3.one));
+                RectTransform firstDockToken = firstDockSlot.Find("ShooterButton").GetComponent<RectTransform>();
+                Assert.That(firstDockToken.sizeDelta, Is.EqualTo(Vector2.one * 112f));
+
+                RectTransform[] queuedDockSlots = NamedChildren(cards[0], "DockSlotQueued");
+                Assert.That(queuedDockSlots.Length, Is.EqualTo(SquareFlowGameplayScreenLayout.ShooterColumnVisibleRows - 1));
+                RectTransform firstQueuedDockSlot = queuedDockSlots[0];
+                Assert.That(firstQueuedDockSlot.sizeDelta, Is.EqualTo(Vector2.one * 112f));
+                Assert.That(firstQueuedDockSlot.localScale, Is.EqualTo(Vector3.one));
+                Assert.That(firstDockSlot.anchoredPosition.y - firstQueuedDockSlot.anchoredPosition.y, Is.EqualTo(116f).Within(0.001f));
+                Assert.That(BottomEdge(firstDockSlot), Is.GreaterThan(TopEdge(firstQueuedDockSlot)));
+                RectTransform firstQueuedToken = firstQueuedDockSlot.Find("ShooterPreview").GetComponent<RectTransform>();
+                Assert.That(firstQueuedToken.sizeDelta, Is.EqualTo(Vector2.one * 112f));
                 Assert.That(FindText(cards[0], "A"), Is.Not.Null);
                 Assert.That(FindText(cards[1], "B"), Is.Not.Null);
                 Assert.That(FindText(cards[2], "C"), Is.Not.Null);
@@ -718,6 +823,67 @@ namespace SquareFlow.Tests
             }
 
             return matches.ToArray();
+        }
+
+        private static void AssertGameplayBandsDoNotOverlap(string deviceName, Vector2 screenSize, Vector2 referenceResolution, BoardLayout board, float safeTop = 0f, float safeBottom = 0f)
+        {
+            Vector2 canvasSize = ExpandCanvasSize(screenSize, referenceResolution);
+            SquareFlowGameplayScreenLayout layout = SquareFlowGameplayScreenLayout.Create(board, canvasSize.y, safeTop, safeBottom);
+            const float requiredGap = 8f;
+
+            Rect statusBar = TopBand(canvasSize.y, safeTop + layout.StatusBarTopOffset, layout.StatusBarSize.y);
+            Rect orbiterStrip = TopBand(canvasSize.y, safeTop + layout.OrbiterStripTopOffset, layout.OrbiterStripSize.y);
+            Rect boardBand = CenterBand(layout.BoardPanelPosition.y, layout.BoardPanelSize.y);
+            Rect waiting = BottomBand(canvasSize.y, safeBottom + layout.QueueBottomOffset, layout.QueueSize.y);
+            Rect dock = BottomBand(canvasSize.y, safeBottom + layout.DockBottomOffset, layout.DockSize.y);
+
+            Assert.That(orbiterStrip.yMax, Is.LessThanOrEqualTo(statusBar.yMin - requiredGap), deviceName + " status/orbiter overlap");
+            Assert.That(boardBand.yMax, Is.LessThanOrEqualTo(orbiterStrip.yMin - requiredGap), deviceName + " orbiter/board overlap");
+            Assert.That(waiting.yMax, Is.LessThanOrEqualTo(boardBand.yMin - requiredGap), deviceName + " board/waiting overlap");
+            Assert.That(dock.yMax, Is.LessThanOrEqualTo(waiting.yMin - requiredGap), deviceName + " waiting/dock overlap");
+        }
+
+        private static Vector2 ExpandCanvasSize(Vector2 screenSize, Vector2 referenceResolution)
+        {
+            float scale = Mathf.Min(screenSize.x / referenceResolution.x, screenSize.y / referenceResolution.y);
+            return screenSize / scale;
+        }
+
+        private static Rect TopBand(float canvasHeight, float topOffset, float height)
+        {
+            float top = canvasHeight * 0.5f - topOffset;
+            return new Rect(0f, top - height, 1f, height);
+        }
+
+        private static Rect BottomBand(float canvasHeight, float bottomOffset, float height)
+        {
+            float bottom = -canvasHeight * 0.5f + bottomOffset;
+            return new Rect(0f, bottom, 1f, height);
+        }
+
+        private static Rect CenterBand(float centerY, float height)
+        {
+            return new Rect(0f, centerY - height * 0.5f, 1f, height);
+        }
+
+        private static float LeftEdge(RectTransform rect)
+        {
+            return rect.anchoredPosition.x - rect.sizeDelta.x * rect.localScale.x * 0.5f;
+        }
+
+        private static float RightEdge(RectTransform rect)
+        {
+            return rect.anchoredPosition.x + rect.sizeDelta.x * rect.localScale.x * 0.5f;
+        }
+
+        private static float TopEdge(RectTransform rect)
+        {
+            return rect.anchoredPosition.y + rect.sizeDelta.y * rect.localScale.y * 0.5f;
+        }
+
+        private static float BottomEdge(RectTransform rect)
+        {
+            return rect.anchoredPosition.y - rect.sizeDelta.y * rect.localScale.y * 0.5f;
         }
     }
 }
