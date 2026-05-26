@@ -134,6 +134,42 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void BoardWorldViewUsesTextureSpritesForGridBlocks()
+        {
+            GameObject host = new GameObject("BoardWorldViewHost");
+            try
+            {
+                BoardWorldView view = host.AddComponent<BoardWorldView>();
+                BoardShape shape = new BoardShape("Five", BoardShape.Mask(new[] { 1, 1, 1, 1, 1 }));
+                BoardCell[,] grid =
+                {
+                    {
+                        BoardCell.Normal(FlowColor.Red, 1),
+                        BoardCell.Normal(FlowColor.Blue, 1),
+                        BoardCell.Normal(FlowColor.Yellow, 1),
+                        BoardCell.Normal(FlowColor.Green, 1),
+                        BoardCell.Bomb()
+                    }
+                };
+                BoardLayout board = BoardLayout.Compute(1, 5, 320f);
+                MobileWorldLayout world = new MobileWorldLayout(board, Vector2.zero, 0.01f);
+                SquareFlowTheme theme = new SquareFlowTheme(true);
+
+                view.Bind(GameState.Create(shape, grid, EmptyColumns(), 1), board, world, theme);
+
+                AssertFaceTextureName(host.transform, 0, 0, "FlowBlockRed");
+                AssertFaceTextureName(host.transform, 0, 1, "FlowBlockBlue");
+                AssertFaceTextureName(host.transform, 0, 2, "FlowBlockYellow");
+                AssertFaceTextureName(host.transform, 0, 3, "FlowBlockGreen");
+                AssertFaceTextureName(host.transform, 0, 4, "FlowBlockOrange");
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void BoardWorldViewActivatesFlashLayerForHitCell()
         {
             GameObject host = new GameObject("BoardWorldViewHost");
@@ -162,6 +198,14 @@ namespace SquareFlow.Tests
             {
                 Object.DestroyImmediate(host);
             }
+        }
+
+        private static void AssertFaceTextureName(Transform parent, int row, int col, string textureName)
+        {
+            Transform cell = parent.Find("WorldCell_" + row + "_" + col);
+            Assert.That(cell, Is.Not.Null);
+            SpriteRenderer face = cell.Find("Face").GetComponent<SpriteRenderer>();
+            Assert.That(face.sprite.texture.name, Is.EqualTo(textureName));
         }
 
         [Test]

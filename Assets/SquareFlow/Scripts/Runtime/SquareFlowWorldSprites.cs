@@ -1,4 +1,5 @@
 using UnityEngine;
+using SquareFlow.Core;
 
 namespace SquareFlow.Runtime
 {
@@ -8,6 +9,11 @@ namespace SquareFlow.Runtime
         private static Sprite circle;
         private static Sprite glow;
         private static Sprite square;
+        private static Sprite blockRed;
+        private static Sprite blockBlue;
+        private static Sprite blockYellow;
+        private static Sprite blockGreen;
+        private static Sprite blockOrange;
 
         public static Sprite RoundedRect
         {
@@ -45,6 +51,25 @@ namespace SquareFlow.Runtime
             }
         }
 
+        public static Sprite BlockForCell(BoardCell cell)
+        {
+            Ensure();
+            if (!cell.IsOccupied) return roundedRect;
+            if (cell.Type == BoardCellType.Bomb) return blockOrange != null ? blockOrange : roundedRect;
+
+            switch (cell.Color)
+            {
+                case FlowColor.Blue:
+                    return blockBlue != null ? blockBlue : roundedRect;
+                case FlowColor.Yellow:
+                    return blockYellow != null ? blockYellow : roundedRect;
+                case FlowColor.Green:
+                    return blockGreen != null ? blockGreen : roundedRect;
+                default:
+                    return blockRed != null ? blockRed : roundedRect;
+            }
+        }
+
         public static void Ensure()
         {
             if (roundedRect != null) return;
@@ -53,6 +78,23 @@ namespace SquareFlow.Runtime
             circle = CreateCircleSprite(64, 0.5f, 0.5f, "SquareFlowWorldCircle");
             glow = CreateCircleSprite(96, 0.5f, 0f, "SquareFlowWorldGlow");
             square = CreateSolidSprite(8, "SquareFlowWorldSquare");
+            blockRed = LoadBlockSprite("FlowBlockRed");
+            blockBlue = LoadBlockSprite("FlowBlockBlue");
+            blockYellow = LoadBlockSprite("FlowBlockYellow");
+            blockGreen = LoadBlockSprite("FlowBlockGreen");
+            blockOrange = LoadBlockSprite("FlowBlockOrange");
+        }
+
+        private static Sprite LoadBlockSprite(string resourceName)
+        {
+            Texture2D texture = Resources.Load<Texture2D>("SquareFlow/Grid/" + resourceName);
+            if (texture == null) return null;
+
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), texture.width);
+            sprite.name = resourceName + "Sprite";
+            return sprite;
         }
 
         private static Sprite CreateSolidSprite(int size, string name)
