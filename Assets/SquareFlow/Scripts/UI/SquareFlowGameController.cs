@@ -50,6 +50,19 @@ namespace SquareFlow.UI
         private Sprite restartButtonSprite;
         private Sprite paletteButtonSprite;
         private Sprite muteButtonSprite;
+        private TMP_FontAsset guiProFont;
+        private Sprite guiProPanelSprite;
+        private Sprite guiProInsetPanelSprite;
+        private Sprite guiProPlayButtonSprite;
+        private Sprite guiProPrimaryButtonSprite;
+        private Sprite guiProSmallButtonSprite;
+        private Sprite guiProDangerButtonSprite;
+        private Sprite guiProConfirmButtonSprite;
+        private Sprite guiProTitleRibbonSprite;
+        private Sprite guiProActionButtonBlueSprite;
+        private Sprite guiProActionButtonRedSprite;
+        private Sprite guiProActionButtonGreenSprite;
+        private Sprite guiProActionButtonYellowSprite;
         private int seenEventCount;
         private GameResult seenResult;
         private bool resultHandled;
@@ -1271,6 +1284,22 @@ namespace SquareFlow.UI
             restartButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowRestartButton", "FlowRestartButtonSprite", 300f);
             paletteButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowPaletteButton", "FlowPaletteButtonSprite", 300f);
             muteButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowMuteButton", "FlowMuteButtonSprite", 300f);
+
+            guiProFont = Resources.Load<TMP_FontAsset>("SquareFlow/GUIPro/LilitaOne-Regular SDF");
+            guiProPanelSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/BasicFrame_Round20", "BasicFrame_Round20", new Vector4(88f, 88f, 88f, 88f), 180f);
+            guiProInsetPanelSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/BasicFrame_Round12", "BasicFrame_Round12", new Vector4(62f, 62f, 62f, 62f), 180f);
+            guiProPlayButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_225_Yellow", "Button01_225_Yellow", new Vector4(88f, 78f, 88f, 78f), 220f);
+            guiProPrimaryButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_225_Blue", "Button01_225_Blue", new Vector4(88f, 78f, 88f, 78f), 220f);
+            guiProSmallButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Blue", "Button01_175_Blue", new Vector4(70f, 62f, 70f, 62f), 190f);
+            guiProDangerButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Red", "Button01_175_Red", new Vector4(70f, 62f, 70f, 62f), 190f);
+            guiProConfirmButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Green", "Button01_175_Green", new Vector4(70f, 62f, 70f, 62f), 190f);
+            guiProTitleRibbonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Label_Ribbon_Single_Orange", "Label_Ribbon_Single_Orange", new Vector4(96f, 58f, 96f, 58f), 210f);
+            guiProActionButtonBlueSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Blue", "Button01_100_Blue", new Vector4(22f, 50f, 22f, 50f), 145f);
+            guiProActionButtonRedSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Red", "Button01_100_Red", new Vector4(22f, 50f, 22f, 50f), 145f);
+            guiProActionButtonGreenSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Green", "Button01_100_Green", new Vector4(22f, 50f, 22f, 50f), 145f);
+            guiProActionButtonYellowSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Yellow", "Button01_100_Yellow", new Vector4(22f, 50f, 22f, 50f), 145f);
+            if (guiProPanelSprite != null)
+                glassPanelSprite = guiProPanelSprite;
         }
 
         private int HighestSavedScore()
