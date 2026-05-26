@@ -1050,9 +1050,7 @@ namespace SquareFlow.UI
 
             TMP_Text text = go.GetComponent<TMP_Text>();
             text.text = value;
-            text.fontSize = size;
-            text.fontStyle = ToTmpFontStyle(style);
-            text.color = color;
+            ApplyGuiProTextSkin(text, size, style, color);
             text.alignment = ToTmpAlignment(alignment);
             text.textWrappingMode = TextWrappingModes.Normal;
             text.overflowMode = TextOverflowModes.Truncate;
@@ -1457,6 +1455,36 @@ namespace SquareFlow.UI
                 default:
                     return FontStyles.Normal;
             }
+        }
+
+        private void ApplyGuiProTextSkin(TMP_Text text, int size, FontStyle style, Color color)
+        {
+            if (guiProFont != null)
+                text.font = guiProFont;
+
+            text.fontSize = size;
+            text.fontStyle = ToTmpFontStyle(style);
+            text.color = color;
+            text.outlineWidth = TextOutlineWidth(size, style);
+            text.outlineColor = TextOutlineColor(color);
+            text.characterSpacing = size >= 40 ? 1.5f : 0.5f;
+            text.wordSpacing = 0f;
+        }
+
+        private static float TextOutlineWidth(int size, FontStyle style)
+        {
+            if (size >= 52) return 0.18f;
+            if (size >= 32) return 0.13f;
+            return style == FontStyle.Bold || style == FontStyle.BoldAndItalic ? 0.09f : 0.055f;
+        }
+
+        private static Color32 TextOutlineColor(Color color)
+        {
+            Color dark = Color.Lerp(new Color32(42, 36, 104, 255), Color.black, 0.12f);
+            if (color.r + color.g + color.b < 1.5f)
+                return new Color32(255, 255, 255, 190);
+
+            return ColorWithAlpha(dark, 0.86f);
         }
 
         private static TextAlignmentOptions ToTmpAlignment(TextAnchor alignment)
