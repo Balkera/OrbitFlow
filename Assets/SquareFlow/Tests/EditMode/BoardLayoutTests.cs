@@ -753,6 +753,14 @@ namespace SquareFlow.Tests
                 AssertGuiProPanel(orbiterStrip);
                 AssertGuiProPanel(waiting);
 
+                AssertRectTransformLayout(
+                    orbiterStrip,
+                    new Vector2(0f, 1f),
+                    new Vector2(1f, 1f),
+                    new Vector2(-16f, 92f),
+                    new Vector2(8f, -328f),
+                    new Vector2(-8f, -236f));
+
                 RectTransform statusRect = status.GetComponent<RectTransform>();
                 AssertRectTransformLayout(
                     status,
@@ -942,6 +950,7 @@ namespace SquareFlow.Tests
             Assert.That(transform, Is.Not.Null);
             Image image = transform.GetComponent<Image>();
             Assert.That(image, Is.Not.Null);
+            Assert.That(image.sprite, Is.Not.Null);
             Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
             AssertSoftPanelShadow(transform);
         }
