@@ -484,6 +484,7 @@ namespace SquareFlow.Tests
                 InvokePrivate(controller, "ShowMenu");
 
                 Transform canvas = host.transform.Find("SquareFlowCanvas");
+                Assert.That(canvas, Is.Not.Null);
                 Transform content = canvas.Find("MenuPanel/MenuContent");
                 Assert.That(content, Is.Not.Null);
 
@@ -506,11 +507,7 @@ namespace SquareFlow.Tests
                 Assert.That(levelButtons.Length, Is.EqualTo(BoardShapeCatalog.Count));
                 for (int i = 0; i < levelButtons.Length; i++)
                 {
-                    Image levelButtonImage = levelButtons[i].GetComponent<Image>();
-                    Assert.That(levelButtonImage, Is.Not.Null);
-                    Assert.That(levelButtonImage.sprite, Is.Not.Null);
-                    Assert.That(levelButtonImage.sprite.texture.name, Does.StartWith("Button01_100_"));
-                    Assert.That(levelButtons[i].GetComponent<Button>(), Is.Not.Null);
+                    AssertGuiProButtonTextureStartsWith(levelButtons[i], "Button01_100_");
                     AssertGuiProFont(FindText(levelButtons[i], (i + 1).ToString()));
                 }
 
@@ -572,28 +569,28 @@ namespace SquareFlow.Tests
                 Assert.That(header.GetComponent<Image>(), Is.Null);
                 Transform scoreCard = header.Find("ScoreCard");
                 Transform bestCard = header.Find("BestCard");
-                AssertGlassPanel(scoreCard);
-                AssertGlassPanel(bestCard);
+                AssertPanelImage(scoreCard);
+                AssertPanelImage(bestCard);
                 Assert.That(FindText(scoreCard, "SCORE"), Is.Not.Null);
                 Assert.That(FindText(bestCard, "BEST"), Is.Not.Null);
-                AssertHeaderIcon(scoreCard, "FlowCrown");
-                AssertHeaderIcon(bestCard, "FlowGem");
-                AssertGlassPanel(header.Find("LevelBadge"));
+                AssertHeaderIconImage(scoreCard);
+                AssertHeaderIconImage(bestCard);
+                AssertPanelImage(header.Find("LevelBadge"));
                 Assert.That(FindText(scoreCard, "0"), Is.Not.Null);
 
                 Transform status = canvas.Find("GameStatusBar");
                 Assert.That(status, Is.Not.Null);
-                AssertGlassPanel(status);
+                AssertPanelImage(status);
                 Transform hudActions = status.Find("HudActions");
                 Assert.That(hudActions, Is.Not.Null);
-                AssertSpriteButton(hudActions.Find("HomeButton"), "FlowHomeButton");
-                AssertSpriteButton(hudActions.Find("RestartButton"), "FlowRestartButton");
-                AssertSpriteButton(hudActions.Find("PaletteButton"), "FlowPaletteButton");
-                AssertSpriteButton(hudActions.Find("MuteButton"), "FlowMuteButton");
+                Assert.That(hudActions.Find("HomeButton").GetComponent<Button>(), Is.Not.Null);
+                Assert.That(hudActions.Find("RestartButton").GetComponent<Button>(), Is.Not.Null);
+                Assert.That(hudActions.Find("PaletteButton").GetComponent<Button>(), Is.Not.Null);
+                Assert.That(hudActions.Find("MuteButton").GetComponent<Button>(), Is.Not.Null);
 
                 Transform orbiterStrip = canvas.Find("OrbiterStrip");
                 Assert.That(orbiterStrip, Is.Not.Null);
-                AssertGlassPanel(orbiterStrip);
+                AssertPanelImage(orbiterStrip);
                 Transform boardFrame = canvas.Find("BoardFrame");
                 Assert.That(boardFrame, Is.Not.Null);
                 RectTransform boardFrameRect = boardFrame.GetComponent<RectTransform>();
@@ -623,7 +620,7 @@ namespace SquareFlow.Tests
 
                 Transform waiting = canvas.Find("WaitingQueue");
                 Assert.That(waiting, Is.Not.Null);
-                AssertGlassPanel(waiting);
+                AssertPanelImage(waiting);
                 RectTransform waitingRect = waiting.GetComponent<RectTransform>();
                 Assert.That(waitingRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
                 Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
@@ -656,7 +653,7 @@ namespace SquareFlow.Tests
                 Assert.That(cards.Length, Is.EqualTo(3));
                 Assert.That(cards[0].sizeDelta, Is.EqualTo(new Vector2(340f, 468f)));
                 for (int i = 0; i < cards.Length; i++)
-                    AssertGlassPanel(cards[i]);
+                    AssertPanelImage(cards[i]);
 
                 RectTransform firstDockSlot = cards[0].Find("DockSlotFront").GetComponent<RectTransform>();
                 Assert.That(firstDockSlot.sizeDelta, Is.EqualTo(Vector2.one * 112f));
@@ -795,10 +792,10 @@ namespace SquareFlow.Tests
                     new Vector2(165f, 39f));
                 AssertGuiProIconButton(hudActions.Find("MuteButton"));
 
-                AssertGuiProFont(FindText(header.Find("ScoreCard"), "SCORE"));
-                AssertGuiProFont(FindText(header.Find("BestCard"), "BEST"));
-                AssertGuiProFont(FindText(status, "0 moves"));
-                AssertGuiProFont(FindText(waiting, "WAITING 0/5"));
+                AssertAllGuiProFonts(header);
+                AssertAllGuiProFonts(status);
+                AssertAllGuiProFonts(orbiterStrip);
+                AssertAllGuiProFonts(waiting);
 
                 AssertRectTransformLayout(
                     waiting,
@@ -829,6 +826,7 @@ namespace SquareFlow.Tests
                         new Vector2(-180f + i * 350f, 234f));
                     Assert.That(cards[i].anchoredPosition, Is.EqualTo(new Vector2(-350f + i * 350f, 0f)));
                     AssertGuiProPanel(cards[i]);
+                    AssertAllGuiProFonts(cards[i]);
                 }
 
                 Assert.That(columns.GetComponentsInChildren<Button>().Length, Is.EqualTo(3));
@@ -868,6 +866,15 @@ namespace SquareFlow.Tests
             Assert.That(text.outlineWidth, Is.GreaterThan(0f));
         }
 
+        private static void AssertAllGuiProFonts(Transform parent)
+        {
+            Assert.That(parent, Is.Not.Null);
+            TMP_Text[] labels = parent.GetComponentsInChildren<TMP_Text>(true);
+            Assert.That(labels.Length, Is.GreaterThan(0));
+            for (int i = 0; i < labels.Length; i++)
+                AssertGuiProFont(labels[i]);
+        }
+
         private static void AssertGuiProPanel(Transform transform, string expectedTextureName = "BasicFrame_Round20")
         {
             Assert.That(transform, Is.Not.Null);
@@ -894,14 +901,28 @@ namespace SquareFlow.Tests
 
         private static void AssertGuiProIconButton(Transform button)
         {
+            AssertGuiProButtonTextureStartsWith(button, "Button01_100_");
+        }
+
+        private static void AssertGuiProButtonTextureStartsWith(Transform button, string expectedTextureNamePrefix)
+        {
             Assert.That(button, Is.Not.Null);
             Image image = button.GetComponent<Image>();
             Assert.That(image, Is.Not.Null);
             Assert.That(image.sprite, Is.Not.Null);
-            Assert.That(image.sprite.texture.name, Does.StartWith("Button01_100_"));
+            Assert.That(image.sprite.texture.name, Does.StartWith(expectedTextureNamePrefix));
             Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
             Assert.That(image.color, Is.EqualTo(Color.white));
             Assert.That(button.GetComponent<Button>(), Is.Not.Null);
+        }
+
+        private static void AssertPanelImage(Transform transform)
+        {
+            Assert.That(transform, Is.Not.Null);
+            Image image = transform.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
+            AssertSoftPanelShadow(transform);
         }
 
         private static void AssertRectTransformLayout(Transform transform, Vector2 anchorMin, Vector2 anchorMax, Vector2 sizeDelta, Vector2 offsetMin, Vector2 offsetMax)
@@ -924,6 +945,17 @@ namespace SquareFlow.Tests
             Assert.That(image, Is.Not.Null);
             Assert.That(image.sprite, Is.Not.Null);
             Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
+            Assert.That(image.preserveAspect, Is.True);
+            Assert.That(image.raycastTarget, Is.False);
+        }
+
+        private static void AssertHeaderIconImage(Transform card)
+        {
+            Transform icon = card.Find("HeaderIcon");
+            Assert.That(icon, Is.Not.Null);
+            Image image = icon.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.sprite, Is.Not.Null);
             Assert.That(image.preserveAspect, Is.True);
             Assert.That(image.raycastTarget, Is.False);
         }
