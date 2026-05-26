@@ -473,6 +473,45 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void MainMenuUsesGuiProSkinWithoutAddingControls()
+        {
+            GameObject host = new GameObject("SquareFlowControllerHost");
+
+            try
+            {
+                SquareFlowGameController controller = host.AddComponent<SquareFlowGameController>();
+                InvokePrivate(controller, "Awake");
+                InvokePrivate(controller, "ShowMenu");
+
+                Transform canvas = host.transform.Find("SquareFlowCanvas");
+                Transform content = canvas.Find("MenuPanel/MenuContent");
+                Assert.That(content, Is.Not.Null);
+
+                AssertGuiProFont(FindText(content, "Square Flow"));
+                AssertGuiProPanel(content.Find("MenuStatsCard"));
+                AssertGuiProPanel(content.Find("InstructionsCard"), "BasicFrame_Round12");
+
+                Transform playButton = content.Find("PlayButton");
+                AssertGuiProButton(playButton, "Button01_225_Yellow");
+                AssertGuiProFont(FindText(playButton, "Play"));
+
+                Transform resetButton = content.Find("MenuStatsCard/ResetAllButton");
+                AssertGuiProButton(resetButton, "Button01_175_Red");
+                AssertGuiProFont(FindText(resetButton, "Reset All"));
+
+                Button[] buttons = content.GetComponentsInChildren<Button>();
+                Assert.That(buttons.Length, Is.EqualTo(BoardShapeCatalog.Count + 3));
+                Assert.That(content.Find("ThemeToggle/ThemeButton"), Is.Not.Null);
+                Assert.That(FindText(content, "Shop"), Is.Null);
+                Assert.That(FindText(content, "Inventory"), Is.Null);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void ExpandedCanvasKeepsGameplayBandsSeparatedOnPhonesAndTablets()
         {
             BoardLayout board = BoardLayout.Compute(5, 5, 620f);
@@ -632,6 +671,72 @@ namespace SquareFlow.Tests
             }
         }
 
+        [Test]
+        public void GameplayUsesGuiProSkinWithoutMovingControls()
+        {
+            GameObject host = new GameObject("SquareFlowControllerHost");
+
+            try
+            {
+                SquareFlowGameController controller = host.AddComponent<SquareFlowGameController>();
+                InvokePrivate(controller, "Awake");
+                InvokePrivate(controller, "SelectLevel", 5);
+                InvokePrivate(controller, "StartLevel");
+
+                Transform canvas = host.transform.Find("SquareFlowCanvas");
+                Assert.That(canvas, Is.Not.Null);
+
+                Transform header = canvas.Find("GameHeader");
+                Transform status = canvas.Find("GameStatusBar");
+                Transform orbiterStrip = canvas.Find("OrbiterStrip");
+                Transform waiting = canvas.Find("WaitingQueue");
+                Transform columns = canvas.Find("ShooterColumns");
+
+                Assert.That(header, Is.Not.Null);
+                AssertGuiProPanel(header.Find("ScoreCard"));
+                AssertGuiProPanel(header.Find("BestCard"));
+                AssertGuiProPanel(header.Find("LevelBadge"));
+                AssertGuiProPanel(status);
+                AssertGuiProPanel(orbiterStrip);
+                AssertGuiProPanel(waiting);
+
+                RectTransform statusRect = status.GetComponent<RectTransform>();
+                Assert.That(statusRect.sizeDelta.y, Is.EqualTo(86f));
+                Assert.That(statusRect.anchoredPosition.y, Is.EqualTo(-136f));
+
+                Transform hudActions = status.Find("HudActions");
+                Assert.That(hudActions, Is.Not.Null);
+                Assert.That(hudActions.GetComponentsInChildren<Button>().Length, Is.EqualTo(4));
+                AssertSpriteButton(hudActions.Find("HomeButton"), "FlowHomeButton");
+                AssertSpriteButton(hudActions.Find("RestartButton"), "FlowRestartButton");
+                AssertSpriteButton(hudActions.Find("PaletteButton"), "FlowPaletteButton");
+                AssertSpriteButton(hudActions.Find("MuteButton"), "FlowMuteButton");
+
+                AssertGuiProFont(FindText(header.Find("ScoreCard"), "SCORE"));
+                AssertGuiProFont(FindText(header.Find("BestCard"), "BEST"));
+                AssertGuiProFont(FindText(status, "0 moves"));
+                AssertGuiProFont(FindText(waiting, "WAITING 0/5"));
+
+                RectTransform waitingRect = waiting.GetComponent<RectTransform>();
+                Assert.That(waitingRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
+                Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
+                Assert.That(waitingRect.sizeDelta, Is.EqualTo(new Vector2(-16f, 164f)));
+                Assert.That(waitingRect.offsetMin.x, Is.EqualTo(8f));
+                Assert.That(waitingRect.offsetMax.x, Is.EqualTo(-8f));
+
+                RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
+                Assert.That(cards.Length, Is.EqualTo(3));
+                for (int i = 0; i < cards.Length; i++)
+                    AssertGuiProPanel(cards[i]);
+
+                Assert.That(columns.GetComponentsInChildren<Button>().Length, Is.EqualTo(3));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
         private static void AssertSkyPanel(Transform transform, float expectedAlpha)
         {
             Image image = transform.GetComponent<Image>();
@@ -643,14 +748,36 @@ namespace SquareFlow.Tests
 
         private static void AssertGlassPanel(Transform transform)
         {
+            AssertGuiProPanel(transform);
+        }
+
+        private static void AssertGuiProFont(TMP_Text text)
+        {
+            Assert.That(text, Is.Not.Null);
+            Assert.That(text.font, Is.Not.Null);
+            Assert.That(text.font.name, Does.Contain("LilitaOne"));
+            Assert.That(text.outlineWidth, Is.GreaterThan(0f));
+        }
+
+        private static void AssertGuiProPanel(Transform transform, string expectedTextureName = "BasicFrame_Round20")
+        {
             Assert.That(transform, Is.Not.Null);
             Image image = transform.GetComponent<Image>();
             Assert.That(image, Is.Not.Null);
             Assert.That(image.sprite, Is.Not.Null);
-            Assert.That(image.sprite.texture.name, Is.EqualTo("FlowPanel"));
+            Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
             Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
-            Assert.That(image.color, Is.EqualTo(Color.white));
             AssertSoftPanelShadow(transform);
+        }
+
+        private static void AssertGuiProButton(Transform button, string expectedTextureName)
+        {
+            Assert.That(button, Is.Not.Null);
+            Image image = button.GetComponent<Image>();
+            Assert.That(image, Is.Not.Null);
+            Assert.That(image.sprite, Is.Not.Null);
+            Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
+            Assert.That(button.GetComponent<Button>(), Is.Not.Null);
         }
 
         private static void AssertHeaderIcon(Transform card, string expectedTextureName)
