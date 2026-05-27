@@ -171,19 +171,14 @@ namespace SquareFlow.UI
             SetAnchored(titleGlow, startLayout.TitlePosition + new Vector2(0f, -2f));
             SetRaycastTarget(titleGlow, false);
             AddText(content, "Square Flow", 84, FontStyle.Bold, theme.Text, startLayout.TitlePosition, new Vector2(820f, 116f));
-            AddMenuSwatches(content, startLayout.SwatchPosition);
-            AddThemeToggle(content, startLayout.ThemeTogglePosition);
 
             RectTransform stats = AddPanel(content, "MenuStatsCard", startLayout.StatsSize, ColorWithAlpha(theme.Panel, 0.94f));
             ApplyGuiProPanelSkin(stats, guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.94f));
             SetAnchored(stats, startLayout.StatsPosition);
             ApplyOutline(stats, ColorWithAlpha(theme.Border, 0.58f), 1f);
-            AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-360f, -2f), theme.Score);
-            AddVerticalDivider(stats, -206f);
-            AddMenuStat(stats, "BOARD", shape.Name, new Vector2(-20f, -2f), theme.Text);
-            AddVerticalDivider(stats, 176f);
-            AddMenuStat(stats, "MAX ORBS", SquareFlowConstants.MaxActiveOrbiters.ToString(CultureInfo.InvariantCulture), new Vector2(278f, -2f), theme.Green);
-            AddButton(stats, "Reset All", new Vector2(424f, -48f), new Vector2(144f, 46f), ColorWithAlpha(theme.Red, 0.14f), theme.Red, ResetProgress, 15).gameObject.name = "ResetAllButton";
+            AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-220f, -2f), theme.Score);
+            AddVerticalDivider(stats, 0f);
+            AddMenuStat(stats, "BOARD", shape.Name, new Vector2(220f, -2f), theme.Text);
 
             RectTransform selector = AddContainer(content, "LevelSelector", startLayout.LevelSelectorSize);
             ApplyGuiProPanelSkin(selector, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.62f));
@@ -191,22 +186,14 @@ namespace SquareFlow.UI
             SetAnchored(selector, startLayout.LevelSelectorPosition);
             RenderLevelSelector(selector);
 
-            RectTransform instructions = AddPanel(content, "InstructionsCard", startLayout.InstructionsSize, ColorWithAlpha(theme.Panel, 0.74f));
-            ApplyGuiProPanelSkin(instructions, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.74f));
-            SetAnchored(instructions, startLayout.InstructionsPosition);
-            ApplyOutline(instructions, ColorWithAlpha(theme.Border, 0.52f), 1f);
-            AddText(instructions, "Orbit shooters around shaped boards. Clear all blocks to win.", 25, FontStyle.Normal, theme.Text, new Vector2(0f, 80f), new Vector2(790f, 44f));
-            AddText(instructions, "HP blocks", 25, FontStyle.Bold, new Color32(255, 150, 44, 255), new Vector2(-340f, 22f), new Vector2(220f, 38f), TextAnchor.MiddleRight);
-            AddText(instructions, "need multiple hits. Bomb blasts 3x3.", 24, FontStyle.Normal, theme.Text, new Vector2(140f, 22f), new Vector2(520f, 38f), TextAnchor.MiddleLeft);
-            AddText(instructions, "Wild", 25, FontStyle.Bold, theme.Text, new Vector2(-340f, -48f), new Vector2(220f, 38f), TextAnchor.MiddleRight);
-            AddText(instructions, "hits any color. Max 5 orbiters at once.", 24, FontStyle.Normal, theme.Text, new Vector2(140f, -48f), new Vector2(520f, 38f), TextAnchor.MiddleLeft);
-
             Button play = AddButton(content, "Play", startLayout.PlayButtonPosition, startLayout.PlayButtonSize, theme.PlayButton, theme.Text, StartLevel, 44);
             play.gameObject.name = "PlayButton";
             RectTransform shine = AddPanel(play.GetComponent<RectTransform>(), "PlayButtonShine", new Vector2(startLayout.PlayButtonSize.x * 0.46f, startLayout.PlayButtonSize.y), ColorWithAlpha(theme.PlayButtonAlt, 0f));
             SetAnchored(shine, new Vector2(-startLayout.PlayButtonSize.x * 0.24f, 0f));
             SetRaycastTarget(shine, false);
             shine.SetAsFirstSibling();
+
+            AddButton(content, "Reset All", startLayout.ResetButtonPosition, startLayout.ResetButtonSize, ColorWithAlpha(theme.Red, 0.14f), theme.Red, ResetProgress, 18).gameObject.name = "ResetAllButton";
         }
 
         private void StartLevel()
@@ -593,39 +580,6 @@ namespace SquareFlow.UI
             return "Out of Shooters";
         }
 
-        private void AddMenuSwatches(RectTransform parent, Vector2 position)
-        {
-            RectTransform row = AddContainer(parent, "MenuSwatches", new Vector2(196f, 44f));
-            SetAnchored(row, position);
-            Color[] colors = { theme.Red, theme.Blue, theme.Yellow, theme.Green };
-            for (int i = 0; i < colors.Length; i++)
-            {
-                RectTransform swatch = AddPanel(row, "Swatch", Vector2.one * 34f, colors[i]);
-                SetAnchored(swatch, new Vector2(-63f + i * 42f, 0f));
-                ApplyOutline(swatch, ColorWithAlpha(Color.white, 0.14f), 1f);
-            }
-        }
-
-        private void AddThemeToggle(RectTransform parent, Vector2 position)
-        {
-            RectTransform toggle = AddPanel(parent, "ThemeToggle", new Vector2(286f, 60f), ColorWithAlpha(theme.Chip, 0.88f));
-            SetAnchored(toggle, position);
-            ApplyOutline(toggle, ColorWithAlpha(theme.Border, 0.56f), 1f);
-            RectTransform moon = AddPanel(toggle, "MoonDot", Vector2.one * 24f, theme.Score, circleSprite);
-            SetAnchored(moon, new Vector2(-88f, 0f));
-
-            RectTransform pill = AddPanel(toggle, "ThemePill", new Vector2(92f, 42f), ColorWithAlpha(theme.Button, 0.86f));
-            SetAnchored(pill, Vector2.zero);
-            ApplyOutline(pill, ColorWithAlpha(Color.white, 0.22f), 1f);
-            RectTransform knob = AddPanel(pill, "ThemeKnob", Vector2.one * 34f, saveData.DarkMode ? Color.white : theme.Score, circleSprite);
-            SetAnchored(knob, new Vector2(saveData.DarkMode ? -23f : 23f, 0f));
-
-            Button themeButton = AddButton(toggle, string.Empty, new Vector2(88f, 0f), new Vector2(54f, 48f), Color.clear, theme.Score, ToggleTheme, 1);
-            themeButton.gameObject.name = "ThemeButton";
-            RectTransform sun = AddPanel(themeButton.GetComponent<RectTransform>(), "SunDot", Vector2.one * 28f, theme.Score, circleSprite);
-            SetAnchored(sun, Vector2.zero);
-        }
-
         private void AddMenuStat(RectTransform parent, string label, string value, Vector2 position, Color valueColor)
         {
             AddText(parent, label, 18, FontStyle.Bold, theme.SubtleText, position + new Vector2(0f, 36f), new Vector2(180f, 30f));
@@ -641,15 +595,21 @@ namespace SquareFlow.UI
         private void RenderLevelSelector(RectTransform panel)
         {
             HashSet<int> completed = saveData.CompletedLevels();
+            const int columns = 5;
+            Vector2 buttonSize = new Vector2(126f, 92f);
+            const float horizontalSpacing = 150f;
+            const float verticalSpacing = 112f;
             for (int i = 0; i < BoardShapeCatalog.Count; i++)
             {
                 int level = i + 1;
-                int col = i % BoardShapeCatalog.Count;
-                float x = -342f + col * 76f;
+                int col = i % columns;
+                int row = i / columns;
+                float x = (col - (columns - 1) * 0.5f) * horizontalSpacing;
+                float y = (0.5f - row) * verticalSpacing;
                 bool selected = level == saveData.Level;
                 Color fill = selected ? ColorWithAlpha(theme.SelectedLevel, 0.16f) : completed.Contains(level) ? ColorWithAlpha(theme.Score, 0.18f) : ColorWithAlpha(theme.Blue, 0.34f);
                 Color text = selected ? theme.Score : theme.Blue;
-                Button button = AddButton(panel, level.ToString(), new Vector2(x, 0f), new Vector2(66f, 62f), fill, text, () => SelectLevel(level), 22);
+                Button button = AddButton(panel, level.ToString(), new Vector2(x, y), buttonSize, fill, text, () => SelectLevel(level), 32);
                 button.gameObject.name = "LevelButton";
                 Outline outline = button.GetComponent<Outline>();
                 if (outline != null)
@@ -743,19 +703,6 @@ namespace SquareFlow.UI
                 return ColorForCell(state.Grid[gameEvent.Row, gameEvent.Col]);
 
             return theme.Score;
-        }
-
-        private void ToggleTheme()
-        {
-            saveData.DarkMode = !saveData.DarkMode;
-            theme = new SquareFlowTheme(saveData.DarkMode);
-            ShowMenu();
-        }
-
-        private void ToggleMute()
-        {
-            saveData.Muted = !saveData.Muted;
-            ShowMenu();
         }
 
         private void ToggleThemeInGame()
@@ -1775,45 +1722,39 @@ namespace SquareFlow.UI
             Vector2 contentSize,
             Vector2 contentPosition,
             Vector2 titlePosition,
-            Vector2 swatchPosition,
-            Vector2 themeTogglePosition,
             Vector2 statsPosition,
             Vector2 statsSize,
             Vector2 levelSelectorPosition,
             Vector2 levelSelectorSize,
-            Vector2 instructionsPosition,
-            Vector2 instructionsSize,
             Vector2 playButtonPosition,
-            Vector2 playButtonSize)
+            Vector2 playButtonSize,
+            Vector2 resetButtonPosition,
+            Vector2 resetButtonSize)
         {
             ContentSize = contentSize;
             ContentPosition = contentPosition;
             TitlePosition = titlePosition;
-            SwatchPosition = swatchPosition;
-            ThemeTogglePosition = themeTogglePosition;
             StatsPosition = statsPosition;
             StatsSize = statsSize;
             LevelSelectorPosition = levelSelectorPosition;
             LevelSelectorSize = levelSelectorSize;
-            InstructionsPosition = instructionsPosition;
-            InstructionsSize = instructionsSize;
             PlayButtonPosition = playButtonPosition;
             PlayButtonSize = playButtonSize;
+            ResetButtonPosition = resetButtonPosition;
+            ResetButtonSize = resetButtonSize;
         }
 
         public Vector2 ContentSize { get; }
         public Vector2 ContentPosition { get; }
         public Vector2 TitlePosition { get; }
-        public Vector2 SwatchPosition { get; }
-        public Vector2 ThemeTogglePosition { get; }
         public Vector2 StatsPosition { get; }
         public Vector2 StatsSize { get; }
         public Vector2 LevelSelectorPosition { get; }
         public Vector2 LevelSelectorSize { get; }
-        public Vector2 InstructionsPosition { get; }
-        public Vector2 InstructionsSize { get; }
         public Vector2 PlayButtonPosition { get; }
         public Vector2 PlayButtonSize { get; }
+        public Vector2 ResetButtonPosition { get; }
+        public Vector2 ResetButtonSize { get; }
 
         public static SquareFlowStartScreenLayout Create()
         {
@@ -1821,16 +1762,14 @@ namespace SquareFlow.UI
                 new Vector2(1030f, 1260f),
                 new Vector2(0f, 40f),
                 new Vector2(0f, 470f),
-                new Vector2(0f, 365f),
-                new Vector2(0f, 280f),
-                new Vector2(0f, 110f),
-                new Vector2(1000f, 170f),
-                new Vector2(0f, -70f),
-                new Vector2(820f, 72f),
-                new Vector2(0f, -285f),
-                new Vector2(840f, 286f),
-                new Vector2(0f, -560f),
-                new Vector2(410f, 128f));
+                new Vector2(0f, 205f),
+                new Vector2(800f, 150f),
+                new Vector2(0f, -30f),
+                new Vector2(860f, 250f),
+                new Vector2(0f, -305f),
+                new Vector2(410f, 128f),
+                new Vector2(0f, -455f),
+                new Vector2(240f, 70f));
         }
     }
 

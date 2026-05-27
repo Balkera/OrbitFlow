@@ -420,12 +420,12 @@ namespace SquareFlow.Tests
                 TMP_Text title = FindText(content, "Square Flow");
                 Assert.That(title.fontSize, Is.GreaterThanOrEqualTo(84));
                 Assert.That(content.Find("MenuTitleGlow"), Is.Not.Null);
-                Assert.That(content.Find("MenuSwatches"), Is.Not.Null);
-                Assert.That(content.Find("ThemeToggle"), Is.Not.Null);
+                Assert.That(content.Find("MenuSwatches"), Is.Null);
+                Assert.That(content.Find("ThemeToggle"), Is.Null);
                 Assert.That(content.Find("MenuStatsCard"), Is.Not.Null);
-                Assert.That(content.Find("InstructionsCard"), Is.Not.Null);
+                Assert.That(content.Find("InstructionsCard"), Is.Null);
                 Assert.That(content.Find("LevelSelector"), Is.Not.Null);
-                Assert.That(content.Find("MenuStatsCard").GetComponent<RectTransform>().sizeDelta.x, Is.EqualTo(1000f));
+                Assert.That(content.Find("MenuStatsCard").GetComponent<RectTransform>().sizeDelta.x, Is.EqualTo(800f));
                 Assert.That(content.Find("MenuTitleGlow").GetComponent<Image>().raycastTarget, Is.False);
 
                 TMP_Text playLabel = FindText(content, "Play");
@@ -437,16 +437,19 @@ namespace SquareFlow.Tests
                 Transform shine = playButton.Find("PlayButtonShine");
                 Assert.That(shine, Is.Not.Null);
                 Assert.That(shine.GetComponent<Image>().raycastTarget, Is.False);
-                Assert.That(FindText(content, "Reset All"), Is.Not.Null);
-                Assert.That(FindText(content, "MAX ORBS"), Is.Not.Null);
-                Assert.That(FindText(content, "5"), Is.Not.Null);
-                Assert.That(FindText(content, "HP blocks"), Is.Not.Null);
+                Transform resetButton = content.Find("ResetAllButton");
+                Assert.That(resetButton, Is.Not.Null);
+                Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.LessThan(playButton.anchoredPosition.y));
+                Assert.That(FindText(resetButton, "Reset All"), Is.Not.Null);
+                Assert.That(FindText(content.Find("MenuStatsCard"), "MAX ORBS"), Is.Null);
+                Assert.That(FindText(content, "HP blocks"), Is.Null);
 
                 Assert.That(content.GetComponentsInChildren<Text>().Length, Is.EqualTo(0));
 
                 Transform selector = content.Find("LevelSelector");
                 int levelButtonCount = 0;
-                float levelButtonY = float.NaN;
+                int topRowCount = 0;
+                int bottomRowCount = 0;
                 TMP_Text[] labels = selector.GetComponentsInChildren<TMP_Text>();
                 for (int i = 0; i < labels.Length; i++)
                 {
@@ -454,16 +457,19 @@ namespace SquareFlow.Tests
                     if (!int.TryParse(labels[i].text, out level)) continue;
 
                     RectTransform button = labels[i].transform.parent.GetComponent<RectTransform>();
-                    Assert.That(button.sizeDelta.x, Is.EqualTo(66f));
-                    Assert.That(button.sizeDelta.y, Is.EqualTo(62f));
-                    Assert.That(labels[i].fontSize, Is.EqualTo(22));
-                    if (float.IsNaN(levelButtonY))
-                        levelButtonY = button.anchoredPosition.y;
-                    Assert.That(button.anchoredPosition.y, Is.EqualTo(levelButtonY).Within(0.001f));
+                    Assert.That(button.sizeDelta.x, Is.EqualTo(126f));
+                    Assert.That(button.sizeDelta.y, Is.EqualTo(92f));
+                    Assert.That(labels[i].fontSize, Is.EqualTo(32));
+                    if (button.anchoredPosition.y > 0f)
+                        topRowCount++;
+                    else
+                        bottomRowCount++;
                     levelButtonCount++;
                 }
 
                 Assert.That(levelButtonCount, Is.EqualTo(BoardShapeCatalog.Count));
+                Assert.That(topRowCount, Is.EqualTo(5));
+                Assert.That(bottomRowCount, Is.EqualTo(5));
                 Assert.That(FindText(content, "Leaderboard"), Is.Null);
             }
             finally
@@ -490,43 +496,40 @@ namespace SquareFlow.Tests
 
                 AssertGuiProFont(FindText(content, "Square Flow"));
                 AssertGuiProPanel(content.Find("MenuStatsCard"));
-                AssertGuiProPanel(content.Find("InstructionsCard"), "BasicFrame_Round12");
+                Assert.That(content.Find("InstructionsCard"), Is.Null);
                 AssertGuiProPanel(content.Find("LevelSelector"), "BasicFrame_Round12");
 
                 Transform playButton = content.Find("PlayButton");
                 AssertGuiProButton(playButton, "Button01_225_Yellow");
                 AssertGuiProFont(FindText(playButton, "Play"));
 
-                Transform resetButton = content.Find("MenuStatsCard/ResetAllButton");
+                Transform resetButton = content.Find("ResetAllButton");
                 AssertGuiProButton(resetButton, "Button01_175_Red");
                 AssertGuiProFont(FindText(resetButton, "Reset All"));
+                Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.LessThan(playButton.GetComponent<RectTransform>().anchoredPosition.y));
 
                 Transform statsCard = content.Find("MenuStatsCard");
                 Assert.That(FindText(statsCard, "LEVEL"), Is.Not.Null);
                 Assert.That(FindText(statsCard, "BOARD"), Is.Not.Null);
-                Assert.That(FindText(statsCard, "MAX ORBS"), Is.Not.Null);
-                Assert.That(FindText(statsCard, "5"), Is.Not.Null);
+                Assert.That(FindText(statsCard, "MAX ORBS"), Is.Null);
                 AssertAllGuiProFonts(statsCard);
-
-                Transform instructionsCard = content.Find("InstructionsCard");
-                Assert.That(FindText(instructionsCard, "HP blocks"), Is.Not.Null);
-                Assert.That(FindText(instructionsCard, "Wild"), Is.Not.Null);
-                AssertAllGuiProFonts(instructionsCard);
+                Assert.That(FindText(content, "HP blocks"), Is.Null);
+                Assert.That(FindText(content, "Wild"), Is.Null);
 
                 Transform levelSelector = content.Find("LevelSelector");
                 AssertAllGuiProFonts(levelSelector);
 
                 Button[] buttons = content.GetComponentsInChildren<Button>(true);
-                Assert.That(buttons.Length, Is.EqualTo(BoardShapeCatalog.Count + 3));
+                Assert.That(buttons.Length, Is.EqualTo(BoardShapeCatalog.Count + 2));
                 RectTransform[] levelButtons = NamedChildren(levelSelector, "LevelButton");
                 Assert.That(levelButtons.Length, Is.EqualTo(BoardShapeCatalog.Count));
                 for (int i = 0; i < levelButtons.Length; i++)
                 {
-                    AssertGuiProButtonTextureStartsWith(levelButtons[i], "Button01_100_");
+                    AssertGuiProButtonTextureStartsWith(levelButtons[i], "Button01_175_");
                     AssertGuiProFont(FindText(levelButtons[i], (i + 1).ToString()));
                 }
 
-                Assert.That(content.Find("ThemeToggle/ThemeButton"), Is.Not.Null);
+                Assert.That(content.Find("ThemeToggle"), Is.Null);
                 Assert.That(FindText(content, "Shop"), Is.Null);
                 Assert.That(FindText(content, "Inventory"), Is.Null);
             }
