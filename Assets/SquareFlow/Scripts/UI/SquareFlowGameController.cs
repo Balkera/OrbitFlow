@@ -51,6 +51,19 @@ namespace SquareFlow.UI
         private Sprite restartButtonSprite;
         private Sprite paletteButtonSprite;
         private Sprite muteButtonSprite;
+        private TMP_FontAsset guiProFont;
+        private Sprite guiProPanelSprite;
+        private Sprite guiProInsetPanelSprite;
+        private Sprite guiProPlayButtonSprite;
+        private Sprite guiProPrimaryButtonSprite;
+        private Sprite guiProSmallButtonSprite;
+        private Sprite guiProDangerButtonSprite;
+        private Sprite guiProConfirmButtonSprite;
+        private Sprite guiProTitleRibbonSprite;
+        private Sprite guiProActionButtonBlueSprite;
+        private Sprite guiProActionButtonRedSprite;
+        private Sprite guiProActionButtonGreenSprite;
+        private Sprite guiProActionButtonYellowSprite;
         private int seenEventCount;
         private GameResult seenResult;
         private bool resultHandled;
@@ -151,6 +164,7 @@ namespace SquareFlow.UI
             BoardShape shape = BoardShapeCatalog.GetShape(saveData.Level);
 
             RectTransform titleGlow = AddPanel(content, "MenuTitleGlow", new Vector2(360f, 66f), ColorWithAlpha(theme.TitleGlow, 0f));
+            ApplyGuiProPanelSkin(titleGlow, guiProTitleRibbonSprite, ColorWithAlpha(theme.TitleGlow, 0.18f));
             SetAnchored(titleGlow, startLayout.TitlePosition + new Vector2(0f, -2f));
             SetRaycastTarget(titleGlow, false);
             AddText(content, "Square Flow", 84, FontStyle.Bold, theme.Text, startLayout.TitlePosition, new Vector2(820f, 116f));
@@ -158,6 +172,7 @@ namespace SquareFlow.UI
             AddThemeToggle(content, startLayout.ThemeTogglePosition);
 
             RectTransform stats = AddPanel(content, "MenuStatsCard", startLayout.StatsSize, ColorWithAlpha(theme.Panel, 0.94f));
+            ApplyGuiProPanelSkin(stats, guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.94f));
             SetAnchored(stats, startLayout.StatsPosition);
             ApplyOutline(stats, ColorWithAlpha(theme.Border, 0.58f), 1f);
             AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-360f, -2f), theme.Score);
@@ -168,10 +183,13 @@ namespace SquareFlow.UI
             AddButton(stats, "Reset All", new Vector2(424f, -48f), new Vector2(144f, 46f), ColorWithAlpha(theme.Red, 0.14f), theme.Red, ResetProgress, 15).gameObject.name = "ResetAllButton";
 
             RectTransform selector = AddContainer(content, "LevelSelector", startLayout.LevelSelectorSize);
+            ApplyGuiProPanelSkin(selector, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.62f));
+            SetRaycastTarget(selector, false);
             SetAnchored(selector, startLayout.LevelSelectorPosition);
             RenderLevelSelector(selector);
 
             RectTransform instructions = AddPanel(content, "InstructionsCard", startLayout.InstructionsSize, ColorWithAlpha(theme.Panel, 0.74f));
+            ApplyGuiProPanelSkin(instructions, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.74f));
             SetAnchored(instructions, startLayout.InstructionsPosition);
             ApplyOutline(instructions, ColorWithAlpha(theme.Border, 0.52f), 1f);
             AddText(instructions, "Orbit shooters around shaped boards. Clear all blocks to win.", 25, FontStyle.Normal, theme.Text, new Vector2(0f, 80f), new Vector2(790f, 44f));
@@ -556,6 +574,7 @@ namespace SquareFlow.UI
             }
 
             RectTransform panel = AddPanel(root, "ResultPanel", new Vector2(600f, 330f), theme.Panel);
+            ApplyGuiProPanelSkin(panel, guiProPanelSprite, theme.Panel);
             SetAnchored(panel, new Vector2(0f, 72f));
             ApplyOutline(panel, ColorWithAlpha(theme.Score, 0.32f), 2f);
             AddText(panel, ResultTitle(), 42, FontStyle.Bold, theme.Text, new Vector2(0f, 100f), new Vector2(520f, 64f));
@@ -981,9 +1000,10 @@ namespace SquareFlow.UI
 
         private RectTransform AddGlassPanel(RectTransform parent, string objectName, Vector2 size)
         {
-            RectTransform panel = AddPanel(parent, objectName, size, Color.white, glassPanelSprite != null ? glassPanelSprite : roundedRectSprite);
+            Sprite sprite = guiProPanelSprite != null ? guiProPanelSprite : glassPanelSprite != null ? glassPanelSprite : roundedRectSprite;
+            RectTransform panel = AddPanel(parent, objectName, size, Color.white, sprite);
+            ApplyGuiProPanelSkin(panel, sprite, Color.white);
             ApplyOutline(panel, ColorWithAlpha(Color.white, 0.50f), 1f);
-            ApplySoftPanelDepth(panel, 0.28f, 8f);
             SetRaycastTarget(panel, false);
             return panel;
         }
@@ -1038,9 +1058,7 @@ namespace SquareFlow.UI
 
             TMP_Text text = go.GetComponent<TMP_Text>();
             text.text = value;
-            text.fontSize = size;
-            text.fontStyle = ToTmpFontStyle(style);
-            text.color = color;
+            ApplyGuiProTextSkin(text, size, style, color);
             text.alignment = ToTmpAlignment(alignment);
             text.textWrappingMode = TextWrappingModes.Normal;
             text.overflowMode = TextOverflowModes.Truncate;
@@ -1056,15 +1074,71 @@ namespace SquareFlow.UI
             return AddButton(parent, label, position, size, color, textColor, action, 18);
         }
 
+        private Sprite ButtonSpriteForLabel(string label, Vector2 size)
+        {
+            if (string.IsNullOrEmpty(label))
+                return null;
+
+            if (label == "Play" || label == "Next Level" || label == "Try Again")
+                return guiProPlayButtonSprite != null ? guiProPlayButtonSprite : guiProConfirmButtonSprite;
+
+            if (label == "Reset All")
+                return guiProDangerButtonSprite;
+
+            if (size.x <= 100f && size.y <= 70f)
+                return GuiProActionButtonSprite();
+
+            if (size.x <= 180f || size.y <= 70f)
+                return guiProSmallButtonSprite != null ? guiProSmallButtonSprite : GuiProActionButtonSprite();
+
+            return guiProPrimaryButtonSprite;
+        }
+
+        private void ApplyGuiProPanelSkin(RectTransform rect, Sprite sprite, Color fallbackColor)
+        {
+            if (rect == null) return;
+
+            Image image = rect.GetComponent<Image>();
+            if (image == null)
+            {
+                image = rect.gameObject.AddComponent<Image>();
+                image.raycastTarget = false;
+            }
+
+            if (sprite != null)
+            {
+                image.sprite = sprite;
+                image.type = HasSpriteBorder(sprite) ? Image.Type.Sliced : Image.Type.Simple;
+                image.color = Color.white;
+            }
+            else
+            {
+                image.color = fallbackColor;
+            }
+
+            EnsureSoftPanelDepth(rect, 0.28f, 8f);
+        }
+
+        private Sprite GuiProActionButtonSprite()
+        {
+            if (guiProActionButtonBlueSprite != null) return guiProActionButtonBlueSprite;
+            if (guiProActionButtonGreenSprite != null) return guiProActionButtonGreenSprite;
+            if (guiProActionButtonYellowSprite != null) return guiProActionButtonYellowSprite;
+            if (guiProActionButtonRedSprite != null) return guiProActionButtonRedSprite;
+            return null;
+        }
+
         private Button AddButton(RectTransform parent, string label, Vector2 position, Vector2 size, Color color, Color textColor, UnityEngine.Events.UnityAction action, int fontSize)
         {
-            RectTransform rect = AddPanel(parent, "Button", size, color);
+            Sprite sprite = ButtonSpriteForLabel(label, size);
+            Color buttonColor = sprite != null ? Color.white : color;
+            RectTransform rect = AddPanel(parent, "Button", size, buttonColor, sprite != null ? sprite : roundedRectSprite);
             SetAnchored(rect, position);
 
             Button button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = rect.GetComponent<Image>();
             button.onClick.AddListener(action);
-            button.colors = ButtonColors(color);
+            button.colors = ButtonColors(buttonColor);
             ApplyOutline(rect, ColorWithAlpha(Color.white, 0.26f), 1f);
 
             TMP_Text text = AddText(rect, label, fontSize, FontStyle.Bold, textColor, Vector2.zero, size);
@@ -1074,17 +1148,36 @@ namespace SquareFlow.UI
 
         private Button AddSpriteButton(RectTransform parent, string objectName, Vector2 position, Vector2 size, Sprite sprite, UnityEngine.Events.UnityAction action)
         {
-            RectTransform rect = AddPanel(parent, objectName, size, Color.white, sprite);
+            Sprite frameSprite = GuiProActionButtonSprite();
+            RectTransform rect = AddPanel(parent, objectName, size, Color.white, frameSprite != null ? frameSprite : sprite);
             SetAnchored(rect, position);
 
             Image image = rect.GetComponent<Image>();
-            image.preserveAspect = true;
+            image.preserveAspect = frameSprite == null;
 
             Button button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             button.onClick.AddListener(action);
             button.colors = SpriteButtonColors();
+
+            if (frameSprite != null && sprite != null)
+            {
+                RectTransform icon = AddPanel(rect, SemanticActionIconName(objectName, sprite), size * 0.58f, Color.white, sprite);
+                SetAnchored(icon, Vector2.zero);
+                Image iconImage = icon.GetComponent<Image>();
+                iconImage.preserveAspect = true;
+                iconImage.raycastTarget = false;
+            }
+
             return button;
+        }
+
+        private static string SemanticActionIconName(string objectName, Sprite sprite)
+        {
+            if (sprite != null && sprite.texture != null && !string.IsNullOrEmpty(sprite.texture.name))
+                return sprite.texture.name + "Icon";
+
+            return objectName + "Icon";
         }
 
         private RectTransform AddShooterButton(RectTransform parent, Shooter shooter, Vector2 position, Vector2 size, UnityEngine.Events.UnityAction action)
@@ -1185,6 +1278,18 @@ namespace SquareFlow.UI
             shadow.effectDistance = new Vector2(0f, -distance);
         }
 
+        private void EnsureSoftPanelDepth(RectTransform rect, float alpha, float distance)
+        {
+            Shadow[] shadows = rect.GetComponents<Shadow>();
+            for (int i = 0; i < shadows.Length; i++)
+            {
+                if (shadows[i].GetType() == typeof(Shadow))
+                    return;
+            }
+
+            ApplySoftPanelDepth(rect, alpha, distance);
+        }
+
         private ColorBlock ButtonColors(Color baseColor)
         {
             ColorBlock colors = ColorBlock.defaultColorBlock;
@@ -1272,6 +1377,22 @@ namespace SquareFlow.UI
             restartButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowRestartButton", "FlowRestartButtonSprite", 300f);
             paletteButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowPaletteButton", "FlowPaletteButtonSprite", 300f);
             muteButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowMuteButton", "FlowMuteButtonSprite", 300f);
+
+            guiProFont = Resources.Load<TMP_FontAsset>("SquareFlow/GUIPro/LilitaOne-Regular SDF");
+            guiProPanelSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/BasicFrame_Round20", "BasicFrame_Round20", new Vector4(25f, 25f, 25f, 25f), 180f);
+            guiProInsetPanelSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/BasicFrame_Round12", "BasicFrame_Round12", new Vector4(18f, 18f, 18f, 18f), 180f);
+            guiProPlayButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_225_Yellow", "Button01_225_Yellow", new Vector4(32f, 199f, 32f, 26f), 220f);
+            guiProPrimaryButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_225_Blue", "Button01_225_Blue", new Vector4(32f, 197f, 32f, 28f), 220f);
+            guiProSmallButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Blue", "Button01_175_Blue", new Vector4(33f, 144f, 31f, 31f), 190f);
+            guiProDangerButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Red", "Button01_175_Red", new Vector4(32f, 143f, 32f, 32f), 190f);
+            guiProConfirmButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Green", "Button01_175_Green", new Vector4(32f, 147f, 32f, 28f), 190f);
+            guiProTitleRibbonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Label_Ribbon_Single_Orange", "Label_Ribbon_Single_Orange", new Vector4(44f, 0f, 30f, 0f), 210f);
+            guiProActionButtonBlueSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Blue", "Button01_100_Blue", new Vector4(27f, 113f, 28f, 32f), 145f);
+            guiProActionButtonRedSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Red", "Button01_100_Red", new Vector4(26f, 116f, 29f, 29f), 145f);
+            guiProActionButtonGreenSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Green", "Button01_100_Green", new Vector4(27f, 117f, 28f, 28f), 145f);
+            guiProActionButtonYellowSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Yellow", "Button01_100_Yellow", new Vector4(28f, 116f, 27f, 29f), 145f);
+            if (guiProPanelSprite != null)
+                glassPanelSprite = guiProPanelSprite;
         }
 
         private int HighestSavedScore()
@@ -1285,6 +1406,35 @@ namespace SquareFlow.UI
             return sprite != null && (sprite.border.x > 0f || sprite.border.y > 0f || sprite.border.z > 0f || sprite.border.w > 0f);
         }
 
+        private static Vector4 ClampSlicedSpriteBorder(Texture2D texture, Vector4 border)
+        {
+            if (texture == null) return Vector4.zero;
+
+            Vector2 horizontal = ClampBorderPair(border.x, border.z, texture.width);
+            Vector2 vertical = ClampBorderPair(border.y, border.w, texture.height);
+            return new Vector4(horizontal.x, vertical.x, horizontal.y, vertical.y);
+        }
+
+        private static Vector2 ClampBorderPair(float leading, float trailing, int textureSize)
+        {
+            leading = Mathf.Max(0f, leading);
+            trailing = Mathf.Max(0f, trailing);
+
+            if (textureSize <= 0)
+                return Vector2.zero;
+
+            float maxBorderTotal = Mathf.Max(0f, textureSize - 1f);
+            float total = leading + trailing;
+            if (total <= maxBorderTotal)
+                return new Vector2(leading, trailing);
+
+            if (total <= 0f || maxBorderTotal <= 0f)
+                return Vector2.zero;
+
+            float scale = maxBorderTotal / total;
+            return new Vector2(leading * scale, trailing * scale);
+        }
+
         private static Sprite LoadSlicedUiSprite(string resourcePath, string spriteName, Vector4 border, float pixelsPerUnit)
         {
             Texture2D texture = Resources.Load<Texture2D>(resourcePath);
@@ -1292,6 +1442,7 @@ namespace SquareFlow.UI
 
             texture.wrapMode = TextureWrapMode.Clamp;
             texture.filterMode = FilterMode.Bilinear;
+            border = ClampSlicedSpriteBorder(texture, border);
 
             Sprite sprite = Sprite.Create(
                 texture,
@@ -1429,6 +1580,36 @@ namespace SquareFlow.UI
                 default:
                     return FontStyles.Normal;
             }
+        }
+
+        private void ApplyGuiProTextSkin(TMP_Text text, int size, FontStyle style, Color color)
+        {
+            if (guiProFont != null)
+                text.font = guiProFont;
+
+            text.fontSize = size;
+            text.fontStyle = ToTmpFontStyle(style);
+            text.color = color;
+            text.outlineWidth = TextOutlineWidth(size, style);
+            text.outlineColor = TextOutlineColor(color);
+            text.characterSpacing = size >= 40 ? 1.5f : 0.5f;
+            text.wordSpacing = 0f;
+        }
+
+        private static float TextOutlineWidth(int size, FontStyle style)
+        {
+            if (size >= 52) return 0.18f;
+            if (size >= 32) return 0.13f;
+            return style == FontStyle.Bold || style == FontStyle.BoldAndItalic ? 0.09f : 0.055f;
+        }
+
+        private static Color32 TextOutlineColor(Color color)
+        {
+            Color dark = Color.Lerp(new Color32(42, 36, 104, 255), Color.black, 0.12f);
+            if (color.r + color.g + color.b < 1.5f)
+                return new Color32(255, 255, 255, 190);
+
+            return ColorWithAlpha(dark, 0.86f);
         }
 
         private static TextAlignmentOptions ToTmpAlignment(TextAnchor alignment)
