@@ -48,6 +48,7 @@ namespace SquareFlow.UI
         private Sprite circleSprite;
         private Sprite shooterCircleSprite;
         private Sprite glassPanelSprite;
+        private Sprite menuLogoSprite;
         private Sprite crownSprite;
         private Sprite gemSprite;
         private Sprite homeButtonSprite;
@@ -62,7 +63,6 @@ namespace SquareFlow.UI
         private Sprite guiProSmallButtonSprite;
         private Sprite guiProDangerButtonSprite;
         private Sprite guiProConfirmButtonSprite;
-        private Sprite guiProTitleRibbonSprite;
         private Sprite guiProActionButtonBlueSprite;
         private Sprite guiProActionButtonRedSprite;
         private Sprite guiProActionButtonGreenSprite;
@@ -166,11 +166,7 @@ namespace SquareFlow.UI
 
             BoardShape shape = BoardShapeCatalog.GetShape(saveData.Level);
 
-            RectTransform titleGlow = AddPanel(content, "MenuTitleGlow", new Vector2(360f, 66f), ColorWithAlpha(theme.TitleGlow, 0f));
-            ApplyGuiProPanelSkin(titleGlow, guiProTitleRibbonSprite, ColorWithAlpha(theme.TitleGlow, 0.18f));
-            SetAnchored(titleGlow, startLayout.TitlePosition + new Vector2(0f, -2f));
-            SetRaycastTarget(titleGlow, false);
-            AddText(content, "Square Flow", 84, FontStyle.Bold, theme.Text, startLayout.TitlePosition, new Vector2(820f, 116f));
+            AddMenuLogo(content, startLayout.LogoPosition, startLayout.LogoSize);
 
             RectTransform stats = AddPanel(content, "MenuStatsCard", startLayout.StatsSize, ColorWithAlpha(theme.Panel, 0.94f));
             ApplyGuiProPanelSkin(stats, guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.94f));
@@ -584,6 +580,21 @@ namespace SquareFlow.UI
         {
             AddText(parent, label, 18, FontStyle.Bold, theme.SubtleText, position + new Vector2(0f, 36f), new Vector2(180f, 30f));
             AddText(parent, value, 52, FontStyle.Bold, valueColor, position + new Vector2(0f, -18f), new Vector2(240f, 66f));
+        }
+
+        private void AddMenuLogo(RectTransform parent, Vector2 position, Vector2 size)
+        {
+            if (menuLogoSprite == null)
+            {
+                AddText(parent, "Pixel Flow", 84, FontStyle.Bold, theme.Text, position, size);
+                return;
+            }
+
+            RectTransform logo = AddPanel(parent, "PixelFlowLogo", size, Color.white, menuLogoSprite);
+            SetAnchored(logo, position);
+            Image image = logo.GetComponent<Image>();
+            image.preserveAspect = true;
+            image.raycastTarget = false;
         }
 
         private void AddVerticalDivider(RectTransform parent, float x)
@@ -1321,6 +1332,7 @@ namespace SquareFlow.UI
             circleSprite = CreateCircleSprite(64, 0.5f, 0.5f, "SquareFlowCircle");
             shooterCircleSprite = CreateCircleSprite(64, 0.88f, 0.64f, "SquareFlowShooterCircle");
             glassPanelSprite = LoadSlicedUiSprite("SquareFlow/UI/FlowPanel", "FlowPanelSprite", new Vector4(150f, 150f, 150f, 150f), 300f);
+            menuLogoSprite = LoadSimpleUiSprite("SquareFlow/UI/PixelFlowLogo", "PixelFlowLogoSprite", 300f);
             crownSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowCrown", "FlowCrownSprite", 300f);
             gemSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowGem", "FlowGemSprite", 300f);
             homeButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowHomeButton", "FlowHomeButtonSprite", 300f);
@@ -1336,7 +1348,6 @@ namespace SquareFlow.UI
             guiProSmallButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Blue", "Button01_175_Blue", new Vector4(33f, 144f, 31f, 31f), 190f);
             guiProDangerButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Red", "Button01_175_Red", new Vector4(32f, 143f, 32f, 32f), 190f);
             guiProConfirmButtonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_175_Green", "Button01_175_Green", new Vector4(32f, 147f, 32f, 28f), 190f);
-            guiProTitleRibbonSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Label_Ribbon_Single_Orange", "Label_Ribbon_Single_Orange", new Vector4(44f, 0f, 30f, 0f), 210f);
             guiProActionButtonBlueSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Blue", "Button01_100_Blue", new Vector4(27f, 113f, 28f, 32f), 145f);
             guiProActionButtonRedSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Red", "Button01_100_Red", new Vector4(26f, 116f, 29f, 29f), 145f);
             guiProActionButtonGreenSprite = LoadSlicedUiSprite("SquareFlow/GUIPro/Button01_100_Green", "Button01_100_Green", new Vector4(27f, 117f, 28f, 28f), 145f);
@@ -1721,7 +1732,8 @@ namespace SquareFlow.UI
         private SquareFlowStartScreenLayout(
             Vector2 contentSize,
             Vector2 contentPosition,
-            Vector2 titlePosition,
+            Vector2 logoPosition,
+            Vector2 logoSize,
             Vector2 statsPosition,
             Vector2 statsSize,
             Vector2 levelSelectorPosition,
@@ -1733,7 +1745,8 @@ namespace SquareFlow.UI
         {
             ContentSize = contentSize;
             ContentPosition = contentPosition;
-            TitlePosition = titlePosition;
+            LogoPosition = logoPosition;
+            LogoSize = logoSize;
             StatsPosition = statsPosition;
             StatsSize = statsSize;
             LevelSelectorPosition = levelSelectorPosition;
@@ -1746,7 +1759,8 @@ namespace SquareFlow.UI
 
         public Vector2 ContentSize { get; }
         public Vector2 ContentPosition { get; }
-        public Vector2 TitlePosition { get; }
+        public Vector2 LogoPosition { get; }
+        public Vector2 LogoSize { get; }
         public Vector2 StatsPosition { get; }
         public Vector2 StatsSize { get; }
         public Vector2 LevelSelectorPosition { get; }
@@ -1761,14 +1775,15 @@ namespace SquareFlow.UI
             return new SquareFlowStartScreenLayout(
                 new Vector2(1030f, 1260f),
                 new Vector2(0f, 40f),
-                new Vector2(0f, 470f),
-                new Vector2(0f, 205f),
+                new Vector2(0f, 425f),
+                new Vector2(760f, 360f),
+                new Vector2(0f, 105f),
                 new Vector2(800f, 150f),
-                new Vector2(0f, -30f),
+                new Vector2(0f, -130f),
                 new Vector2(860f, 250f),
-                new Vector2(0f, -305f),
+                new Vector2(0f, -405f),
                 new Vector2(410f, 128f),
-                new Vector2(0f, -455f),
+                new Vector2(0f, -535f),
                 new Vector2(240f, 70f));
         }
     }
