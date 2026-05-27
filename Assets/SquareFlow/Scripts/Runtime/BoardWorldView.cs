@@ -8,7 +8,6 @@ namespace SquareFlow.Runtime
 {
     public sealed class BoardWorldView : MonoBehaviour
     {
-        private const int GridBackdropSortingOrder = -2;
         private const int DepthSortingOrder = 0;
         private const int FaceSortingOrder = 1;
         private const int HighlightSortingOrder = 2;
@@ -16,7 +15,6 @@ namespace SquareFlow.Runtime
         private const int HitFlashSortingOrder = 8;
 
         private readonly List<CellView> cells = new List<CellView>();
-        private SpriteRenderer gridBackdrop;
         private BoardShape boundShape;
         private string boundActiveMaskSignature;
         private BoardLayout boundBoard;
@@ -50,7 +48,6 @@ namespace SquareFlow.Runtime
             boundActiveMaskSignature = activeMaskSignature;
             boundBoard = board;
             boundWorld = world;
-            RefreshGridBackdrop(theme);
             RefreshCells(state, theme);
         }
 
@@ -74,7 +71,7 @@ namespace SquareFlow.Runtime
                 cell.Depth.transform.localPosition = new Vector3(0f, -boundWorld.CellSize * SquareFlowVisualMetrics.TileDepthDropScale, 0.04f);
                 cell.Highlight.transform.localScale = new Vector3(tileSize * 0.72f, Mathf.Max(0.03f, tileSize * 0.08f), 1f);
                 cell.Highlight.transform.localPosition = new Vector3(0f, tileSize * 0.3f, -0.04f);
-                cell.Label.transform.localPosition = new Vector3(0f, 0f, -0.08f);
+                cell.Label.transform.localPosition = new Vector3(0f, 0.05f, -0.08f);
                 cell.Label.fontSize = SquareFlowVisualMetrics.CellLabelFontSize;
                 cell.Label.rectTransform.sizeDelta = Vector2.one * tileSize * 1.25f;
                 cell.HitFlash.transform.localScale = Vector3.one * tileSize;
@@ -113,7 +110,6 @@ namespace SquareFlow.Runtime
                 DestroyImmediateOrRuntime(transform.GetChild(i).gameObject);
 
             cells.Clear();
-            gridBackdrop = null;
             boundShape = null;
             boundActiveMaskSignature = null;
             boundBoard = null;
@@ -128,7 +124,6 @@ namespace SquareFlow.Runtime
             cells.Clear();
             boundShape = state.Shape;
             boundActiveMaskSignature = ActiveMaskSignature(state.Shape);
-            gridBackdrop = CreateRenderer(transform, "GridBackdrop", SquareFlowWorldSprites.RoundedRect, GridBackdropSortingOrder);
 
             for (int r = 0; r < state.Shape.Rows; r++)
             for (int c = 0; c < state.Shape.Cols; c++)
@@ -151,19 +146,6 @@ namespace SquareFlow.Runtime
             hitFlash.gameObject.SetActive(false);
 
             return new CellView(row, col, root, depth, face, highlight, label, hitFlash);
-        }
-
-        private void RefreshGridBackdrop(SquareFlowTheme theme)
-        {
-            if (gridBackdrop == null || boundBoard == null || !boundWorld.IsValid) return;
-
-            gridBackdrop.gameObject.SetActive(true);
-            gridBackdrop.transform.position = new Vector3(boundWorld.BoardCenter.x, boundWorld.BoardCenter.y, 0.12f);
-            gridBackdrop.transform.localScale = new Vector3(
-                (boundBoard.GridWidth + 12f) * boundWorld.WorldUnitsPerLayoutPixel,
-                (boundBoard.GridHeight + 12f) * boundWorld.WorldUnitsPerLayoutPixel,
-                1f);
-            gridBackdrop.color = ColorWithAlpha(Color.black, 0.22f);
         }
 
         private CellView FindCell(int row, int col)

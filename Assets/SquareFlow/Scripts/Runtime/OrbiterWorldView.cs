@@ -206,7 +206,7 @@ namespace SquareFlow.Runtime
             view.AmmoLabel.text = count.ToString();
             view.AmmoLabel.transform.localPosition = new Vector3(0f, 0f, -0.16f);
             view.AmmoLabel.fontSize = SquareFlowVisualMetrics.ActiveOrbiterAmmoLabelFontSize;
-            view.AmmoLabel.rectTransform.sizeDelta = Vector2.one * tokenSize * 1.18f;
+            view.AmmoLabel.rectTransform.sizeDelta = Vector2.one * tokenSize * 1.55f;
             view.AmmoLabel.color = AmmoLabelColor(orbiter.Color, orbiter.Wild);
         }
 

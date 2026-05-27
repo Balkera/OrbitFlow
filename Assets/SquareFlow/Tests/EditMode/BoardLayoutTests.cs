@@ -4,6 +4,7 @@ using TMPro;
 using NUnit.Framework;
 using SquareFlow.Core;
 using SquareFlow.UI;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -162,11 +163,11 @@ namespace SquareFlow.Tests
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterWorldScale, Is.EqualTo(1f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterTokenScale * SquareFlowVisualMetrics.ActiveOrbiterWorldScale, Is.InRange(0.9f, 1.05f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterLaunchDurationSeconds, Is.EqualTo(0.5f));
-            Assert.That(SquareFlowVisualMetrics.ActiveOrbiterAmmoLabelFontSize, Is.EqualTo(1f));
+            Assert.That(SquareFlowVisualMetrics.ActiveOrbiterAmmoLabelFontSize, Is.EqualTo(3.5f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterAmmoParticleScale, Is.EqualTo(0.1f));
             Assert.That(SquareFlowVisualMetrics.ShooterButtonMinimumDiameter, Is.GreaterThanOrEqualTo(74f));
             Assert.That(SquareFlowVisualMetrics.CellDepthOffsetScale, Is.GreaterThanOrEqualTo(0.08f));
-            Assert.That(SquareFlowVisualMetrics.CellLabelFontSize, Is.EqualTo(2f));
+            Assert.That(SquareFlowVisualMetrics.CellLabelFontSize, Is.EqualTo(3.5f));
             Assert.That(SquareFlowVisualMetrics.DockSlotFrontScale, Is.EqualTo(1.4f));
             Assert.That(SquareFlowVisualMetrics.CellHitFeedbackDurationSeconds, Is.InRange(0.18f, 0.3f));
             Assert.That(SquareFlowVisualMetrics.CellHitShakeAmplitudeScale, Is.InRange(0.08f, 0.16f));
@@ -184,6 +185,25 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void TmpExamplePrefabsDoNotKeepObsoleteCanvasRenderer()
+        {
+            string[] paths =
+            {
+                "Assets/TextMesh Pro/Examples & Extras/Prefabs/TextMeshPro - Prefab 1.prefab",
+                "Assets/TextMesh Pro/Examples & Extras/Prefabs/TextMeshPro - Prefab 2.prefab"
+            };
+
+            for (int i = 0; i < paths.Length; i++)
+            {
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(paths[i]);
+
+                Assert.That(prefab, Is.Not.Null, paths[i]);
+                Assert.That(prefab.GetComponent<TMPro.TextMeshPro>(), Is.Not.Null, paths[i]);
+                Assert.That(prefab.GetComponent<CanvasRenderer>(), Is.Null, paths[i]);
+            }
+        }
+
+        [Test]
         public void ReferenceGameplayLayoutKeepsCanvasForHudQueueAndDock()
         {
             BoardLayout board = BoardLayout.Compute(5, 5, 620f);
@@ -195,7 +215,7 @@ namespace SquareFlow.Tests
             Assert.That(layout.StatusBarSize, Is.EqualTo(new Vector2(1080f, 86f)));
             Assert.That(layout.StatusBarTopOffset, Is.EqualTo(136f));
             Assert.That(layout.ActionSize.x, Is.EqualTo(360f));
-            Assert.That(layout.ActionPosition.x, Is.EqualTo(344f));
+            Assert.That(layout.ActionPosition.x, Is.EqualTo(300f));
             Assert.That(layout.ActionPosition.y, Is.EqualTo(0f));
             Assert.That(layout.UtilityButtonSize, Is.EqualTo(new Vector2(78f, 78f)));
             Assert.That(layout.OrbiterStripSize, Is.EqualTo(new Vector2(1064f, 92f)));
@@ -278,7 +298,7 @@ namespace SquareFlow.Tests
 
                 Assert.That(selectableDots, Is.Null);
                 Assert.That(selectableLabel.text, Is.EqualTo("3"));
-                Assert.That(selectableLabel.fontSize, Is.EqualTo(SquareFlowVisualMetrics.ShooterAmmoLabelFontSize));
+                AssertReadableAutosizedText(selectableLabel, SquareFlowVisualMetrics.ShooterAmmoLabelFontSize);
 
                 InvokeAddShooterToken(controller, queuedParent.GetComponent<RectTransform>(), new Shooter("queued", FlowColor.Red, 2, false), false);
                 Transform queuedToken = queuedParent.transform.Find("ShooterPreview");
@@ -287,7 +307,7 @@ namespace SquareFlow.Tests
 
                 Assert.That(queuedDots, Is.Null);
                 Assert.That(queuedLabel.text, Is.EqualTo("2"));
-                Assert.That(queuedLabel.fontSize, Is.EqualTo(SquareFlowVisualMetrics.ShooterAmmoLabelQueuedFontSize));
+                AssertReadableAutosizedText(queuedLabel, SquareFlowVisualMetrics.ShooterAmmoLabelQueuedFontSize);
 
                 InvokeAddShooterToken(controller, hiddenParent.GetComponent<RectTransform>(), new Shooter("hidden", FlowColor.Green, 6, false, true), false);
                 Transform hiddenToken = hiddenParent.transform.Find("ShooterPreview");
@@ -296,6 +316,7 @@ namespace SquareFlow.Tests
                 Assert.That(hiddenImage.sprite.texture.name, Is.EqualTo("SquareFlowShooterCircle"));
                 Assert.That(hiddenImage.color.a, Is.GreaterThanOrEqualTo(0.76f));
                 Assert.That(hiddenLabel.text, Is.EqualTo("?"));
+                AssertReadableAutosizedText(hiddenLabel, SquareFlowVisualMetrics.ShooterAmmoLabelQueuedFontSize);
             }
             finally
             {
@@ -338,6 +359,14 @@ namespace SquareFlow.Tests
                 Assert.That(waitingButtons[0].localScale, Is.EqualTo(Vector3.one));
                 Assert.That(waitingButtons[1].anchoredPosition.x - waitingButtons[0].anchoredPosition.x, Is.EqualTo(128f).Within(0.001f));
                 Assert.That(RightEdge(waitingButtons[0]), Is.LessThan(LeftEdge(waitingButtons[1])));
+                Assert.That(waitingSlots[0].anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(waitingButtons[0].anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
+                TMP_Text benchLabel = FindText(queue, "BENCH");
+                TMP_Text countLabel = FindText(queue, "2/5");
+                AssertReadableAutosizedText(benchLabel, 30f);
+                AssertReadableAutosizedText(countLabel, 34f);
+                Assert.That(RightEdge(benchLabel.rectTransform), Is.LessThan(LeftEdge(waitingSlots[0])));
+                Assert.That(LeftEdge(countLabel.rectTransform), Is.GreaterThan(RightEdge(waitingSlots[waitingSlots.Length - 1])));
             }
             finally
             {
@@ -446,7 +475,7 @@ namespace SquareFlow.Tests
                 Assert.That(playButton.sizeDelta.x, Is.EqualTo(410f));
                 Assert.That(playButton.sizeDelta.y, Is.EqualTo(128f));
                 Assert.That(playButton.anchoredPosition.y, Is.EqualTo(-485f));
-                Assert.That(playLabel.fontSize, Is.GreaterThanOrEqualTo(40));
+                AssertReadableAutosizedText(playLabel, 44f);
                 Transform shine = playButton.Find("PlayButtonShine");
                 Assert.That(shine, Is.Not.Null);
                 Assert.That(shine.GetComponent<Image>().raycastTarget, Is.False);
@@ -454,9 +483,10 @@ namespace SquareFlow.Tests
                 Assert.That(resetButton, Is.Not.Null);
                 Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(-615f));
                 Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.LessThan(playButton.anchoredPosition.y));
-                Assert.That(FindText(resetButton, "Reset All"), Is.Not.Null);
+                AssertReadableAutosizedText(FindText(resetButton, "Reset All"), 18f);
                 Assert.That(FindText(content.Find("MenuStatsCard"), "MAX ORBS"), Is.Null);
                 Assert.That(FindText(content, "HP blocks"), Is.Null);
+                AssertAllTextsUseReadableAutosizing(content);
 
                 Assert.That(content.GetComponentsInChildren<Text>().Length, Is.EqualTo(0));
 
@@ -473,7 +503,7 @@ namespace SquareFlow.Tests
                     RectTransform button = labels[i].transform.parent.GetComponent<RectTransform>();
                     Assert.That(button.sizeDelta.x, Is.EqualTo(126f));
                     Assert.That(button.sizeDelta.y, Is.EqualTo(92f));
-                    Assert.That(labels[i].fontSize, Is.EqualTo(32));
+                    AssertReadableAutosizedText(labels[i], 32f);
                     if (button.anchoredPosition.y > 0f)
                         topRowCount++;
                     else
@@ -590,15 +620,15 @@ namespace SquareFlow.Tests
                 SpriteRenderer worldBackgroundRenderer = worldBackground.GetComponent<SpriteRenderer>();
                 Assert.That(worldBackgroundRenderer.sprite.texture.name, Is.EqualTo("FlowSkyBackground"));
                 Assert.That(worldBackgroundRenderer.sortingOrder, Is.LessThan(0));
-                Transform worldBoardPanel = host.transform.Find("SquareFlowWorld/WorldBoardPanel");
-                Assert.That(worldBoardPanel, Is.Not.Null);
-                SpriteRenderer worldBoardPanelRenderer = worldBoardPanel.GetComponent<SpriteRenderer>();
-                Assert.That(worldBoardPanelRenderer, Is.Not.Null);
-                Assert.That(worldBoardPanelRenderer.sprite.texture.name, Is.Not.EqualTo("FlowPanel"));
-                Assert.That(worldBoardPanelRenderer.sortingOrder, Is.LessThan(-2));
-                Assert.That(worldBoardPanelRenderer.color.b, Is.GreaterThan(worldBoardPanelRenderer.color.g));
-                Assert.That(worldBoardPanelRenderer.color.g, Is.GreaterThan(worldBoardPanelRenderer.color.r));
-                Assert.That(worldBoardPanelRenderer.color.a, Is.GreaterThan(0.35f));
+                Assert.That(host.transform.Find("SquareFlowWorld/WorldBoardPanelBorder"), Is.Null);
+                Assert.That(host.transform.Find("SquareFlowWorld/WorldBoardPanel"), Is.Null);
+                Transform boardWorldView = host.transform.Find("SquareFlowWorld/BoardWorldView");
+                Assert.That(boardWorldView, Is.Not.Null);
+                Assert.That(boardWorldView.Find("GridBackdrop"), Is.Null);
+                TextMeshPro[] worldCellLabels = boardWorldView.GetComponentsInChildren<TextMeshPro>(true);
+                Assert.That(worldCellLabels.Length, Is.GreaterThan(0));
+                for (int i = 0; i < worldCellLabels.Length; i++)
+                    Assert.That(worldCellLabels[i].rectTransform.localPosition.y, Is.EqualTo(0.05f).Within(0.001f), worldCellLabels[i].name);
                 Transform header = canvas.Find("GameHeader");
                 Assert.That(header, Is.Not.Null);
                 Assert.That(header.GetComponent<Image>(), Is.Null);
@@ -645,7 +675,7 @@ namespace SquareFlow.Tests
 
                 TMP_Text moves = FindText(status, "0 MOVES");
                 Assert.That(moves, Is.Not.Null);
-                Assert.That(moves.fontSize, Is.EqualTo(36f));
+                AssertReadableAutosizedText(moves, 36f);
                 AssertTextOutlineDarkerThanFill(moves);
                 Assert.That(RightEdge(moves.rectTransform), Is.LessThan(LeftEdge(hudActions.GetComponent<RectTransform>())));
 
@@ -655,15 +685,18 @@ namespace SquareFlow.Tests
                 Assert.That(orbiterLabel.fontSize * orbiterLabel.rectTransform.localScale.x, Is.EqualTo(moves.fontSize).Within(0.001f));
                 AssertTextOutlineDarkerThanFill(orbiterLabel);
                 Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.5f).Within(0.001f));
-                Assert.That(orbiterLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-375f));
-                Assert.That(LeftEdge(orbiterLabel.rectTransform), Is.EqualTo(LeftEdge(moves.rectTransform)).Within(6f));
+                Assert.That(orbiterLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-350f));
                 TMP_Text orbiterCount = FindText(strip, "0/5");
                 Assert.That(orbiterCount, Is.Not.Null);
                 Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.5f).Within(0.001f));
                 RectTransform[] orbiterDots = NamedChildren(strip, "OrbiterDot");
                 Assert.That(orbiterDots.Length, Is.EqualTo(SquareFlowConstants.MaxActiveOrbiters));
-                Assert.That(orbiterDots[0].anchoredPosition.x, Is.EqualTo(-230f));
+                Assert.That(orbiterDots[0].anchoredPosition.x, Is.EqualTo(-138f));
+                Assert.That(orbiterDots[2].anchoredPosition.x, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(orbiterDots[1].anchoredPosition.x - orbiterDots[0].anchoredPosition.x, Is.EqualTo(69f).Within(0.001f));
                 Assert.That(orbiterDots[0].localScale.x, Is.EqualTo(2.94f).Within(0.001f));
+                Assert.That(RightEdge(orbiterLabel.rectTransform), Is.LessThan(LeftEdge(orbiterDots[0])));
+                Assert.That(RightEdge(orbiterDots[orbiterDots.Length - 1]), Is.LessThan(LeftEdge(orbiterCount.rectTransform)));
 
                 Transform waiting = canvas.Find("WaitingQueue");
                 Assert.That(waiting, Is.Not.Null);
@@ -671,18 +704,27 @@ namespace SquareFlow.Tests
                 RectTransform waitingRect = waiting.GetComponent<RectTransform>();
                 Assert.That(waitingRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
                 Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
-                Assert.That(waitingRect.sizeDelta, Is.EqualTo(new Vector2(-16f, 164f)));
-                Assert.That(waitingRect.offsetMin.x, Is.EqualTo(8f));
-                Assert.That(waitingRect.offsetMax.x, Is.EqualTo(-8f));
+                Assert.That(waitingRect.sizeDelta, Is.EqualTo(new Vector2(-80f, 164f)));
+                Assert.That(waitingRect.offsetMin.x, Is.EqualTo(40f));
+                Assert.That(waitingRect.offsetMax.x, Is.EqualTo(-40f));
 
                 RectTransform[] waitingSlots = NamedChildren(waiting, "WaitingSlot");
                 Assert.That(waitingSlots.Length, Is.EqualTo(SquareFlowConstants.WaitQueueLimit));
                 Assert.That(waitingSlots[0].sizeDelta, Is.EqualTo(Vector2.one * 112f));
                 Assert.That(waitingSlots[0].localScale, Is.EqualTo(Vector3.one));
-                TMP_Text waitingLabel = FindText(waiting, "WAITING 0/5");
+                TMP_Text waitingLabel = FindText(waiting, "BENCH");
                 Assert.That(waitingLabel, Is.Not.Null);
-                Assert.That(waitingLabel.rectTransform.localScale.x, Is.EqualTo(2.08f).Within(0.001f));
+                AssertReadableAutosizedText(waitingLabel, 30f);
+                TMP_Text waitingCount = FindText(waiting, "0/5");
+                Assert.That(waitingCount, Is.Not.Null);
+                AssertReadableAutosizedText(waitingCount, 34f);
+                Assert.That(RightEdge(waitingLabel.rectTransform), Is.LessThan(LeftEdge(waitingSlots[0])));
+                Assert.That(LeftEdge(waitingCount.rectTransform), Is.GreaterThan(RightEdge(waitingSlots[waitingSlots.Length - 1])));
+                Assert.That(waitingLabel.rectTransform.anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(waitingCount.rectTransform.anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
+                AssertAllTextsUseReadableAutosizing(canvas);
                 float waitingY = waitingSlots[0].anchoredPosition.y;
+                Assert.That(waitingY, Is.EqualTo(0f).Within(0.001f));
                 for (int i = 0; i < waitingSlots.Length; i++)
                 {
                     Assert.That(waitingSlots[i].anchoredPosition.y, Is.EqualTo(waitingY).Within(0.001f));
@@ -695,12 +737,14 @@ namespace SquareFlow.Tests
                 RectTransform columnsRect = columns.GetComponent<RectTransform>();
                 Assert.That(columnsRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
                 Assert.That(columnsRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
-                Assert.That(columnsRect.sizeDelta, Is.EqualTo(new Vector2(-16f, 480f)));
+                Assert.That(columnsRect.sizeDelta, Is.EqualTo(new Vector2(-80f, 480f)));
                 RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
                 Assert.That(cards.Length, Is.EqualTo(3));
-                Assert.That(cards[0].sizeDelta, Is.EqualTo(new Vector2(340f, 468f)));
+                Assert.That(cards[0].sizeDelta, Is.EqualTo(new Vector2(288f, 468f)));
                 for (int i = 0; i < cards.Length; i++)
                     AssertPanelImage(cards[i]);
+                Assert.That(LeftEdge(cards[1]) - RightEdge(cards[0]), Is.GreaterThanOrEqualTo(60f));
+                Assert.That(LeftEdge(cards[2]) - RightEdge(cards[1]), Is.GreaterThanOrEqualTo(60f));
 
                 RectTransform firstDockSlot = cards[0].Find("DockSlotFront").GetComponent<RectTransform>();
                 Assert.That(firstDockSlot.sizeDelta, Is.EqualTo(Vector2.one * 112f));
@@ -717,10 +761,19 @@ namespace SquareFlow.Tests
                 Assert.That(BottomEdge(firstDockSlot), Is.GreaterThan(TopEdge(firstQueuedDockSlot)));
                 RectTransform firstQueuedToken = firstQueuedDockSlot.Find("ShooterPreview").GetComponent<RectTransform>();
                 Assert.That(firstQueuedToken.sizeDelta, Is.EqualTo(Vector2.one * 112f));
-                Assert.That(FindText(cards[0], "A"), Is.Not.Null);
-                Assert.That(FindText(cards[1], "B"), Is.Not.Null);
-                Assert.That(FindText(cards[2], "C"), Is.Not.Null);
+                AssertReadableAutosizedText(FindText(cards[0], "A"), 52f);
+                AssertReadableAutosizedText(FindText(cards[1], "B"), 52f);
+                AssertReadableAutosizedText(FindText(cards[2], "C"), 52f);
                 Assert.That(columns.GetComponentsInChildren<Button>().Length, Is.EqualTo(3));
+
+                GameState gameState = GetPrivateField<GameState>(controller, "state");
+                gameState.Result = GameResult.LostOutOfShooters;
+                InvokePrivate(controller, "ShowResultPanel");
+                Transform resultPanel = canvas.Find("ResultPanel");
+                Assert.That(resultPanel, Is.Not.Null);
+                AssertReadableAutosizedText(FindText(resultPanel, "Out of Shooters"), 42f);
+                AssertReadableAutosizedText(FindText(resultPanel, "Try Again"), 24f);
+                AssertAllTextsUseReadableAutosizing(resultPanel);
             }
             finally
             {
@@ -793,18 +846,18 @@ namespace SquareFlow.Tests
                     orbiterStrip,
                     new Vector2(0f, 1f),
                     new Vector2(1f, 1f),
-                    new Vector2(-16f, 92f),
-                    new Vector2(8f, -328f),
-                    new Vector2(-8f, -236f));
+                    new Vector2(-80f, 92f),
+                    new Vector2(40f, -328f),
+                    new Vector2(-40f, -236f));
 
                 RectTransform statusRect = status.GetComponent<RectTransform>();
                 AssertRectTransformLayout(
                     status,
                     new Vector2(0f, 1f),
                     new Vector2(1f, 1f),
-                    new Vector2(0f, 86f),
-                    new Vector2(0f, -222f),
-                    new Vector2(0f, -136f));
+                    new Vector2(-80f, 86f),
+                    new Vector2(40f, -222f),
+                    new Vector2(-40f, -136f));
                 Assert.That(statusRect.sizeDelta.y, Is.EqualTo(86f));
                 Assert.That(statusRect.anchoredPosition.y, Is.EqualTo(-136f));
 
@@ -815,8 +868,8 @@ namespace SquareFlow.Tests
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(360f, 76f),
-                    new Vector2(164f, -38f),
-                    new Vector2(524f, 38f));
+                    new Vector2(120f, -38f),
+                    new Vector2(480f, 38f));
                 Assert.That(hudActions.GetComponentsInChildren<Button>().Length, Is.EqualTo(4));
                 AssertRectTransformLayout(
                     hudActions.Find("HomeButton"),
@@ -860,17 +913,17 @@ namespace SquareFlow.Tests
                     waiting,
                     new Vector2(0f, 0f),
                     new Vector2(1f, 0f),
-                    new Vector2(-16f, 164f),
-                    new Vector2(8f, 500f),
-                    new Vector2(-8f, 664f));
+                    new Vector2(-80f, 164f),
+                    new Vector2(40f, 500f),
+                    new Vector2(-40f, 664f));
 
                 AssertRectTransformLayout(
                     columns,
                     new Vector2(0f, 0f),
                     new Vector2(1f, 0f),
-                    new Vector2(-16f, 480f),
-                    new Vector2(8f, 12f),
-                    new Vector2(-8f, 492f));
+                    new Vector2(-80f, 480f),
+                    new Vector2(40f, 12f),
+                    new Vector2(-40f, 492f));
 
                 RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
                 Assert.That(cards.Length, Is.EqualTo(3));
@@ -880,10 +933,10 @@ namespace SquareFlow.Tests
                         cards[i],
                         new Vector2(0.5f, 0.5f),
                         new Vector2(0.5f, 0.5f),
-                        new Vector2(340f, 468f),
-                        new Vector2(-520f + i * 350f, -234f),
-                        new Vector2(-180f + i * 350f, 234f));
-                    Assert.That(cards[i].anchoredPosition, Is.EqualTo(new Vector2(-350f + i * 350f, 0f)));
+                        new Vector2(288f, 468f),
+                        new Vector2(-496f + i * 352f, -234f),
+                        new Vector2(-208f + i * 352f, 234f));
+                    Assert.That(cards[i].anchoredPosition, Is.EqualTo(new Vector2(-352f + i * 352f, 0f)));
                     AssertGuiProPanel(cards[i]);
                     AssertAllGuiProFonts(cards[i]);
                 }
@@ -950,6 +1003,29 @@ namespace SquareFlow.Tests
                 AssertGuiProFont(labels[i]);
         }
 
+        private static void AssertAllTextsUseReadableAutosizing(Transform parent)
+        {
+            Assert.That(parent, Is.Not.Null);
+            TMP_Text[] labels = parent.GetComponentsInChildren<TMP_Text>(true);
+            Assert.That(labels.Length, Is.GreaterThan(0));
+            for (int i = 0; i < labels.Length; i++)
+            {
+                Assert.That(labels[i].enableAutoSizing, Is.True, labels[i].text);
+                Assert.That(labels[i].fontSizeMax, Is.EqualTo(labels[i].fontSizeMin * 2f).Within(0.001f), labels[i].text);
+                Assert.That(labels[i].overflowMode, Is.EqualTo(TextOverflowModes.Truncate), labels[i].text);
+            }
+        }
+
+        private static void AssertReadableAutosizedText(TMP_Text text, float previousSize)
+        {
+            Assert.That(text, Is.Not.Null);
+            Assert.That(text.enableAutoSizing, Is.True, text.text);
+            Assert.That(text.fontSizeMin, Is.EqualTo(previousSize).Within(0.001f), text.text);
+            Assert.That(text.fontSizeMax, Is.EqualTo(previousSize * 2f).Within(0.001f), text.text);
+            Assert.That(text.fontSize, Is.EqualTo(previousSize * 2f).Within(0.001f), text.text);
+            Assert.That(text.overflowMode, Is.EqualTo(TextOverflowModes.Truncate), text.text);
+        }
+
         private static void AssertNoShapeNameText(Transform parent)
         {
             foreach (BoardShape shape in BoardShapeCatalog.All)
@@ -965,6 +1041,7 @@ namespace SquareFlow.Tests
             Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
             Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
             Assert.That(image.color, Is.EqualTo(Color.white));
+            Assert.That(image.pixelsPerUnitMultiplier, Is.EqualTo(0.25f).Within(0.001f));
             AssertSoftPanelShadow(transform);
         }
 
@@ -1010,6 +1087,7 @@ namespace SquareFlow.Tests
             Assert.That(image, Is.Not.Null);
             Assert.That(image.sprite, Is.Not.Null);
             Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
+            Assert.That(image.pixelsPerUnitMultiplier, Is.EqualTo(0.25f).Within(0.001f));
             AssertSoftPanelShadow(transform);
         }
 
@@ -1243,6 +1321,12 @@ namespace SquareFlow.Tests
         {
             FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             field.SetValue(target, value);
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            return (T)field.GetValue(target);
         }
 
         private static int AmmoDotCount(Transform parent)

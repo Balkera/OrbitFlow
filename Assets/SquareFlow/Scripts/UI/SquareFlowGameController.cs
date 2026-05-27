@@ -18,20 +18,23 @@ namespace SquareFlow.UI
     {
         private const float ReferenceCanvasWidth = 1080f;
         private const float ReferenceCanvasHeight = 1920f;
-        private const float ShooterColumnSpacing = 350f;
+        private const float ShooterColumnSpacing = 352f;
+        private const float ShooterColumnCardWidth = 288f;
+        private const float ShooterColumnCardHeight = 468f;
         private const float ShooterRowSpacing = 116f;
         private const float WaitingQueueSpacing = 128f;
-        private const float ResponsiveHorizontalMargin = 8f;
+        private const float ResponsiveHorizontalMargin = 40f;
         private const float OrbiterStripItemScale = 2.94f;
         private const float OrbiterStripLabelScale = 1.5f;
-        private const float OrbiterStripLabelX = -375f;
-        private const float OrbiterStripFirstDotX = -230f;
-        private const float OrbiterStripDotSpacing = 54f;
-        private const float WaitingQueueLabelScale = 2.08f;
+        private const float OrbiterStripLabelX = -350f;
+        private const float OrbiterStripFirstDotX = -138f;
+        private const float OrbiterStripDotSpacing = 69f;
         private const float WaitingQueueSlotSize = 112f;
         private const float WaitingQueueTokenSize = 112f;
         private const float ShooterDockSlotSize = 112f;
         private const float ShooterDockTokenSize = 112f;
+        private const float ReadableTextScale = 2f;
+        private const float PanelPixelsPerUnitMultiplier = 0.25f;
 
         private readonly List<GameObject> dynamicObjects = new List<GameObject>();
         private SaveDataService saveData;
@@ -78,8 +81,6 @@ namespace SquareFlow.UI
         private WorldEffectsController worldEffects;
         private MobileWorldLayout worldLayout;
         private SpriteRenderer worldBackground;
-        private SpriteRenderer worldBoardPanelBorder;
-        private SpriteRenderer worldBoardPanel;
 
         private void Awake()
         {
@@ -113,7 +114,6 @@ namespace SquareFlow.UI
                     if (worldLayoutChanged)
                     {
                         RefreshWorldBackground();
-                        RefreshWorldBoardPanel();
                         boardWorldView.Bind(state, layout, worldLayout, theme);
                         orbitRingWorldView.Bind(layout, worldLayout, theme);
                     }
@@ -170,6 +170,7 @@ namespace SquareFlow.UI
 
             RectTransform stats = AddPanel(content, "MenuStatsCard", startLayout.StatsSize, ColorWithAlpha(theme.Panel, 0.94f));
             ApplyGuiProPanelSkin(stats, guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.94f));
+            ApplyPanelPixelsPerUnitMultiplier(stats);
             SetAnchored(stats, startLayout.StatsPosition);
             ApplyOutline(stats, ColorWithAlpha(theme.Border, 0.58f), 1f);
             AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-220f, -2f), theme.Score);
@@ -178,6 +179,7 @@ namespace SquareFlow.UI
 
             RectTransform selector = AddContainer(content, "LevelSelector", startLayout.LevelSelectorSize);
             ApplyGuiProPanelSkin(selector, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.62f));
+            ApplyPanelPixelsPerUnitMultiplier(selector);
             SetRaycastTarget(selector, false);
             SetAnchored(selector, startLayout.LevelSelectorPosition);
             RenderLevelSelector(selector);
@@ -240,8 +242,8 @@ namespace SquareFlow.UI
             AddText(levelBadge, state.Level.ToString(CultureInfo.InvariantCulture), 52, FontStyle.Bold, HeaderNumberColor(), new Vector2(0f, -17f), new Vector2(210f, 62f));
 
             RectTransform status = AddGlassPanel(root, "GameStatusBar", screen.StatusBarSize);
-            SetTopStretch(status, safeArea.w + screen.StatusBarTopOffset, screen.StatusBarSize.y, 0f);
-            comboText = AddText(status, string.Empty, 36, FontStyle.Bold, HeaderLabelColor(), new Vector2(-360f, 0f), new Vector2(300f, 50f), TextAnchor.MiddleLeft);
+            SetTopStretch(status, safeArea.w + screen.StatusBarTopOffset, screen.StatusBarSize.y, ResponsiveHorizontalMargin);
+            comboText = AddText(status, string.Empty, 36, FontStyle.Bold, HeaderLabelColor(), new Vector2(-320f, 0f), new Vector2(300f, 50f), TextAnchor.MiddleLeft);
 
             RectTransform actions = AddContainer(status, "HudActions", screen.ActionSize);
             SetAnchored(actions, screen.ActionPosition);
@@ -289,7 +291,6 @@ namespace SquareFlow.UI
             if (!worldLayout.IsValid) return;
             worldRoot.SetActive(true);
             RefreshWorldBackground();
-            RefreshWorldBoardPanel();
             boardWorldView.Bind(state, layout, worldLayout, theme);
             orbitRingWorldView.Bind(layout, worldLayout, theme);
             orbiterWorldView.Refresh(state.ActiveOrbiters, worldLayout, theme);
@@ -313,7 +314,7 @@ namespace SquareFlow.UI
                 ApplyOutline(dot, ColorWithAlpha(Color.white, 0.68f), 1f);
             }
 
-            TMP_Text count = AddText(strip, active.ToString(CultureInfo.InvariantCulture) + "/" + SquareFlowConstants.MaxActiveOrbiters, 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(367f, -1f), new Vector2(90f, 30f), TextAnchor.MiddleRight);
+            TMP_Text count = AddText(strip, active.ToString(CultureInfo.InvariantCulture) + "/" + SquareFlowConstants.MaxActiveOrbiters, 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(385f, -1f), new Vector2(90f, 30f), TextAnchor.MiddleRight);
             SetUniformScale(count.rectTransform, OrbiterStripLabelScale);
         }
 
@@ -372,12 +373,12 @@ namespace SquareFlow.UI
         {
             int capacity = SquareFlowConstants.WaitQueueLimit;
             float startX = WaitingQueueStartX(capacity);
-            TMP_Text waitingLabel = AddText(queue, "WAITING " + state.WaitingQueue.Count + "/" + capacity, 20, FontStyle.Bold, HeaderLabelColor(), new Vector2(-232f, 61f), new Vector2(270f, 36f), TextAnchor.MiddleLeft);
-            SetUniformScale(waitingLabel.rectTransform, WaitingQueueLabelScale);
+            AddText(queue, "BENCH", 30, FontStyle.Bold, HeaderLabelColor(), new Vector2(-435f, 0f), new Vector2(190f, 70f), TextAnchor.MiddleLeft);
+            AddText(queue, state.WaitingQueue.Count.ToString(CultureInfo.InvariantCulture) + "/" + capacity, 34, FontStyle.Bold, HeaderLabelColor(), new Vector2(435f, 0f), new Vector2(170f, 70f), TextAnchor.MiddleRight);
 
             for (int i = 0; i < capacity; i++)
             {
-                Vector2 position = new Vector2(startX + i * WaitingQueueSpacing, -22f);
+                Vector2 position = new Vector2(startX + i * WaitingQueueSpacing, 0f);
                 RectTransform slot = AddPanel(queue, "WaitingSlot", Vector2.one * WaitingQueueSlotSize, ColorWithAlpha(theme.InactiveSlot, 0.62f), circleSprite);
                 SetAnchored(slot, position);
                 ApplyOutline(slot, ColorWithAlpha(Color.white, 0.66f), 1f);
@@ -387,7 +388,7 @@ namespace SquareFlow.UI
             {
                 int index = i;
                 Shooter shooter = state.WaitingQueue[i];
-                AddShooterButton(queue, shooter, new Vector2(startX + i * WaitingQueueSpacing, -22f), Vector2.one * WaitingQueueTokenSize, () => FireWaiting(index));
+                AddShooterButton(queue, shooter, new Vector2(startX + i * WaitingQueueSpacing, 0f), Vector2.one * WaitingQueueTokenSize, () => FireWaiting(index));
             }
         }
 
@@ -403,9 +404,9 @@ namespace SquareFlow.UI
                 int column = i;
                 float x = startX + i * ShooterColumnSpacing;
                 List<Shooter> shooterColumn = state.ShooterColumns[i];
-                RectTransform card = AddGlassPanel(columns, "ShooterColumnCard", new Vector2(340f, 468f));
+                RectTransform card = AddGlassPanel(columns, "ShooterColumnCard", new Vector2(ShooterColumnCardWidth, ShooterColumnCardHeight));
                 SetAnchored(card, new Vector2(x, 0f));
-                AddText(card, ((char)('A' + i)).ToString(), 21, FontStyle.Bold, HeaderLabelColor(), new Vector2(-126f, 206f), new Vector2(80f, 32f));
+                AddText(card, ((char)('A' + i)).ToString(), 52, FontStyle.Bold, HeaderLabelColor(), new Vector2(-104f, 196f), new Vector2(96f, 72f));
 
                 for (int row = 0; row < visibleRows; row++)
                 {
@@ -487,7 +488,7 @@ namespace SquareFlow.UI
             SquareFlowGameplayScreenLayout screen = CreateGameplayScreenLayout(CurrentSafeAreaPadding());
             Vector2 queueOffset = new Vector2(
                 WaitingQueueStartX(SquareFlowConstants.WaitQueueLimit) + index * WaitingQueueSpacing,
-                -22f);
+                0f);
             Vector2 referencePosition = screen.QueuePosition + queueOffset;
             orbiterWorldView.RegisterLaunchSource(orbiterId, ReferenceCanvasToWorld(referencePosition));
         }
@@ -666,7 +667,7 @@ namespace SquareFlow.UI
             if (bestText != null)
                 bestText.text = Mathf.Max(state.Score, HighestSavedScore()).ToString("N0", CultureInfo.InvariantCulture);
             if (comboText != null)
-                comboText.text = state.Combo > 1f ? "combo x" + state.Combo.ToString("0.0", CultureInfo.InvariantCulture) : state.Moves + " MOVES";
+                comboText.text = state.Combo > 1f ? "COMBO X" + state.Combo.ToString("0.0", CultureInfo.InvariantCulture) : state.Moves + " MOVES";
         }
 
         private void PlayEvents(List<GameEvent> events)
@@ -835,14 +836,6 @@ namespace SquareFlow.UI
             worldBackground.transform.SetParent(worldRoot.transform, false);
             worldBackground.sortingOrder = -100;
 
-            worldBoardPanelBorder = new GameObject("WorldBoardPanelBorder").AddComponent<SpriteRenderer>();
-            worldBoardPanelBorder.transform.SetParent(worldRoot.transform, false);
-            worldBoardPanelBorder.sortingOrder = -11;
-
-            worldBoardPanel = new GameObject("WorldBoardPanel").AddComponent<SpriteRenderer>();
-            worldBoardPanel.transform.SetParent(worldRoot.transform, false);
-            worldBoardPanel.sortingOrder = -10;
-
             boardWorldView = new GameObject("BoardWorldView").AddComponent<BoardWorldView>();
             boardWorldView.transform.SetParent(worldRoot.transform, false);
 
@@ -890,49 +883,6 @@ namespace SquareFlow.UI
             worldBackground.transform.localScale = Vector3.one * coverScale;
         }
 
-        private void RefreshWorldBoardPanel()
-        {
-            if (worldBoardPanel == null || worldBoardPanelBorder == null || mobileCamera == null || layout == null || !worldLayout.IsValid)
-            {
-                SetWorldBoardPanelVisible(false);
-                return;
-            }
-
-            SquareFlowGameplayScreenLayout screen = SquareFlowGameplayScreenLayout.Create(layout);
-            Rect visible = mobileCamera.VisibleWorldRect;
-            float referencePixelToWorld = Mathf.Min(
-                visible.width / ReferenceCanvasWidth,
-                visible.height / ReferenceCanvasHeight);
-            Vector2 panelSize = screen.BoardPanelSize * referencePixelToWorld;
-            Vector2 panelCenter = ReferenceCanvasToWorld(screen.BoardPanelPosition);
-
-            ConfigureWorldPanelRenderer(
-                worldBoardPanelBorder,
-                panelCenter,
-                panelSize + Vector2.one * Mathf.Max(0.04f, referencePixelToWorld * 10f),
-                ColorWithAlpha(Color.white, 0.34f));
-            ConfigureWorldPanelRenderer(worldBoardPanel, panelCenter, panelSize, BoardPanelColor());
-        }
-
-        private void SetWorldBoardPanelVisible(bool visible)
-        {
-            if (worldBoardPanelBorder != null)
-                worldBoardPanelBorder.gameObject.SetActive(visible);
-            if (worldBoardPanel != null)
-                worldBoardPanel.gameObject.SetActive(visible);
-        }
-
-        private static void ConfigureWorldPanelRenderer(SpriteRenderer renderer, Vector2 center, Vector2 size, Color color)
-        {
-            renderer.gameObject.SetActive(true);
-            renderer.sprite = SquareFlowWorldSprites.RoundedRect;
-            renderer.drawMode = SpriteDrawMode.Sliced;
-            renderer.size = size;
-            renderer.color = color;
-            renderer.transform.position = new Vector3(center.x, center.y, 0.36f);
-            renderer.transform.localScale = Vector3.one;
-        }
-
         private TMP_Text AddHeaderStatCard(RectTransform parent, string objectName, Vector2 position, Vector2 size, string label, int valueFontSize, Sprite icon)
         {
             RectTransform card = AddGlassPanel(parent, objectName, size);
@@ -969,6 +919,7 @@ namespace SquareFlow.UI
             Sprite sprite = guiProPanelSprite != null ? guiProPanelSprite : glassPanelSprite != null ? glassPanelSprite : roundedRectSprite;
             RectTransform panel = AddPanel(parent, objectName, size, Color.white, sprite);
             ApplyGuiProPanelSkin(panel, sprite, Color.white);
+            ApplyPanelPixelsPerUnitMultiplier(panel);
             ApplyOutline(panel, ColorWithAlpha(Color.white, 0.50f), 1f);
             SetRaycastTarget(panel, false);
             return panel;
@@ -1030,8 +981,8 @@ namespace SquareFlow.UI
             text.overflowMode = TextOverflowModes.Truncate;
             text.raycastTarget = false;
             Shadow shadow = go.AddComponent<Shadow>();
-            shadow.effectColor = ColorWithAlpha(Color.black, 0.45f);
-            shadow.effectDistance = new Vector2(1.2f, -1.2f);
+            shadow.effectColor = ColorWithAlpha(Color.black, 0.62f);
+            shadow.effectDistance = new Vector2(1.8f, -1.8f);
             return text;
         }
 
@@ -1083,6 +1034,13 @@ namespace SquareFlow.UI
             }
 
             EnsureSoftPanelDepth(rect, 0.28f, 8f);
+        }
+
+        private static void ApplyPanelPixelsPerUnitMultiplier(RectTransform rect)
+        {
+            Image image = rect != null ? rect.GetComponent<Image>() : null;
+            if (image != null)
+                image.pixelsPerUnitMultiplier = PanelPixelsPerUnitMultiplier;
         }
 
         private Sprite GuiProActionButtonSprite()
@@ -1308,11 +1266,6 @@ namespace SquareFlow.UI
         private static Color SkyBorderColor(float alpha)
         {
             return ColorWithAlpha(new Color32(207, 231, 255, 255), alpha);
-        }
-
-        private static Color BoardPanelColor()
-        {
-            return ColorWithAlpha(new Color32(53, 132, 233, 255), 0.42f);
         }
 
         private static Color HeaderLabelColor()
@@ -1553,16 +1506,20 @@ namespace SquareFlow.UI
             if (guiProFont != null)
                 text.font = guiProFont;
 
-            text.fontSize = size;
+            float readableSize = size * ReadableTextScale;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = size;
+            text.fontSizeMax = readableSize;
+            text.fontSize = readableSize;
             text.fontStyle = ToTmpFontStyle(style);
             text.color = color;
-            text.outlineWidth = TextOutlineWidth(size, style);
+            text.outlineWidth = TextOutlineWidth(readableSize, style);
             text.outlineColor = TextOutlineColor(color);
-            text.characterSpacing = size >= 40 ? 1.5f : 0.5f;
+            text.characterSpacing = readableSize >= 40 ? 1f : 0.25f;
             text.wordSpacing = 0f;
         }
 
-        private static float TextOutlineWidth(int size, FontStyle style)
+        private static float TextOutlineWidth(float size, FontStyle style)
         {
             if (size >= 52) return 0.18f;
             if (size >= 32) return 0.13f;
@@ -1572,7 +1529,7 @@ namespace SquareFlow.UI
         private static Color32 TextOutlineColor(Color color)
         {
             Color dark = Color.Lerp(color, Color.black, 0.42f);
-            return ColorWithAlpha(dark, 0.88f);
+            return ColorWithAlpha(dark, 0.95f);
         }
 
         private static TextAlignmentOptions ToTmpAlignment(TextAnchor alignment)
@@ -1706,7 +1663,7 @@ namespace SquareFlow.UI
         public const float ActiveOrbiterTokenScale = 0.98f;
         public const float ActiveOrbiterWorldScale = 1f;
         public const float ActiveOrbiterLaunchDurationSeconds = 0.5f;
-        public const float ActiveOrbiterAmmoLabelFontSize = 1f;
+        public const float ActiveOrbiterAmmoLabelFontSize = 3.5f;
         public const float ActiveOrbiterAmmoParticleScale = 0.1f;
         public const float ActiveOrbiterAmmoParticleOrbitRadiusScale = 0.72f;
         public const float ActiveOrbiterAmmoParticleRotationDegreesPerSecond = 120f;
@@ -1722,7 +1679,7 @@ namespace SquareFlow.UI
         public const float TileDepthDropScale = 0.16f;
         public const float TileDepthDarkenAmount = 0.28f;
         public const float TileTopHighlightAlpha = 0.18f;
-        public const float CellLabelFontSize = 2f;
+        public const float CellLabelFontSize = 3.5f;
         public const float CellHitFeedbackDurationSeconds = 0.22f;
         public const float CellHitShakeAmplitudeScale = 0.11f;
         public const float CellHitHeavyShakeMultiplier = 1.45f;
@@ -1914,7 +1871,7 @@ namespace SquareFlow.UI
                 hudSize,
                 statusBarSize,
                 statusBarTopOffset,
-                new Vector2(344f, 0f),
+                new Vector2(300f, 0f),
                 actionSize,
                 Vector2.zero,
                 orbiterStripPosition,

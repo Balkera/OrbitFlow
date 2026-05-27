@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 3300000}
   - component: {fileID: 2300000}
   - component: {fileID: 11400000}
-  - component: {fileID: 22224556}
   m_Layer: 0
   m_Name: TextMeshPro - Prefab 2
   m_TagString: Untagged
@@ -182,12 +181,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   m_maskType: 0
---- !u!222 &22224556
-CanvasRenderer:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 100000}
 --- !u!224 &22478072
 RectTransform:
   m_ObjectHideFlags: 1
