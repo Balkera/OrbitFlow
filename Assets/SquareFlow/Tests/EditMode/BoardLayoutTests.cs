@@ -527,7 +527,9 @@ namespace SquareFlow.Tests
                 AssertHeaderIcon(scoreCard, "FlowCrown");
                 AssertHeaderIcon(bestCard, "FlowGem");
                 AssertGlassPanel(header.Find("LevelBadge"));
+                Assert.That(FindText(header.Find("LevelBadge"), "LEVEL"), Is.Not.Null);
                 Assert.That(FindText(scoreCard, "0"), Is.Not.Null);
+                AssertNoShapeNameText(header);
 
                 Transform status = canvas.Find("GameStatusBar");
                 Assert.That(status, Is.Not.Null);
@@ -559,12 +561,16 @@ namespace SquareFlow.Tests
 
                 TMP_Text moves = FindText(status, "0 moves");
                 Assert.That(moves, Is.Not.Null);
+                Assert.That(moves.fontSize, Is.EqualTo(30f));
                 Assert.That(RightEdge(moves.rectTransform), Is.LessThan(LeftEdge(hudActions.GetComponent<RectTransform>())));
 
                 Transform strip = canvas.Find("OrbiterStrip");
                 TMP_Text orbiterLabel = FindText(strip, "ORBITERS");
                 Assert.That(orbiterLabel, Is.Not.Null);
-                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(2.94f).Within(0.001f));
+                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.62f).Within(0.001f));
+                TMP_Text orbiterCount = FindText(strip, "0/5");
+                Assert.That(orbiterCount, Is.Not.Null);
+                Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.62f).Within(0.001f));
                 RectTransform[] orbiterDots = NamedChildren(strip, "OrbiterDot");
                 Assert.That(orbiterDots.Length, Is.EqualTo(SquareFlowConstants.MaxActiveOrbiters));
                 Assert.That(orbiterDots[0].localScale.x, Is.EqualTo(2.94f).Within(0.001f));
@@ -653,6 +659,11 @@ namespace SquareFlow.Tests
             AssertSoftPanelShadow(transform);
         }
 
+        private static void AssertNoShapeNameText(Transform parent)
+        {
+            foreach (BoardShape shape in BoardShapeCatalog.All)
+                Assert.That(FindText(parent, shape.Name), Is.Null, shape.Name + " should not render in the gameplay HUD.");
+        }
         private static void AssertHeaderIcon(Transform card, string expectedTextureName)
         {
             Transform icon = card.Find("HeaderIcon");

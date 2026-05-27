@@ -23,6 +23,7 @@ namespace SquareFlow.UI
         private const float WaitingQueueSpacing = 128f;
         private const float ResponsiveHorizontalMargin = 8f;
         private const float OrbiterStripItemScale = 2.94f;
+        private const float OrbiterStripLabelScale = 1.62f;
         private const float WaitingQueueLabelScale = 2.08f;
         private const float WaitingQueueSlotSize = 112f;
         private const float WaitingQueueTokenSize = 112f;
@@ -225,18 +226,18 @@ namespace SquareFlow.UI
 
             RectTransform hud = AddContainer(root, "GameHeader", screen.HudSize);
             SetTopStretch(hud, safeArea.w, screen.HudSize.y, 0f);
-            hudText = AddHeaderStatCard(hud, "ScoreCard", new Vector2(-362f, 0f), new Vector2(330f, 104f), "SCORE", 52, crownSprite);
-            bestText = AddHeaderStatCard(hud, "BestCard", new Vector2(-40f, 0f), new Vector2(286f, 104f), "BEST", 46, gemSprite);
+            Vector2 headerCardSize = new Vector2(300f, 104f);
+            hudText = AddHeaderStatCard(hud, "ScoreCard", new Vector2(-320f, 0f), headerCardSize, "SCORE", 52, crownSprite);
+            bestText = AddHeaderStatCard(hud, "BestCard", Vector2.zero, headerCardSize, "BEST", 46, gemSprite);
 
-            RectTransform levelBadge = AddGlassPanel(hud, "LevelBadge", new Vector2(122f, 92f));
-            SetAnchored(levelBadge, new Vector2(278f, 0f));
-            AddText(levelBadge, "LV", 17, FontStyle.Bold, HeaderLabelColor(), new Vector2(0f, 22f), new Vector2(88f, 26f));
-            AddText(levelBadge, state.Level.ToString(CultureInfo.InvariantCulture), 38, FontStyle.Bold, HeaderNumberColor(), new Vector2(0f, -14f), new Vector2(88f, 48f));
-            AddText(hud, state.Shape.Name, 24, FontStyle.Bold, HeaderLabelColor(), new Vector2(436f, 0f), new Vector2(168f, 48f));
+            RectTransform levelBadge = AddGlassPanel(hud, "LevelBadge", headerCardSize);
+            SetAnchored(levelBadge, new Vector2(320f, 0f));
+            AddText(levelBadge, "LEVEL", 22, FontStyle.Bold, HeaderLabelColor(), new Vector2(0f, 25f), new Vector2(210f, 30f));
+            AddText(levelBadge, state.Level.ToString(CultureInfo.InvariantCulture), 52, FontStyle.Bold, HeaderNumberColor(), new Vector2(0f, -17f), new Vector2(210f, 62f));
 
             RectTransform status = AddGlassPanel(root, "GameStatusBar", screen.StatusBarSize);
             SetTopStretch(status, safeArea.w + screen.StatusBarTopOffset, screen.StatusBarSize.y, 0f);
-            comboText = AddText(status, string.Empty, 24, FontStyle.Bold, HeaderLabelColor(), new Vector2(-360f, 0f), new Vector2(260f, 40f), TextAnchor.MiddleLeft);
+            comboText = AddText(status, string.Empty, 30, FontStyle.Bold, HeaderLabelColor(), new Vector2(-360f, 0f), new Vector2(300f, 44f), TextAnchor.MiddleLeft);
 
             RectTransform actions = AddContainer(status, "HudActions", screen.ActionSize);
             SetAnchored(actions, screen.ActionPosition);
@@ -296,7 +297,7 @@ namespace SquareFlow.UI
             RectTransform strip = AddGlassPanel(root, "OrbiterStrip", screen.OrbiterStripSize);
             SetTopStretch(strip, safeArea.w + screen.OrbiterStripTopOffset, screen.OrbiterStripSize.y, ResponsiveHorizontalMargin);
             TMP_Text label = AddText(strip, "ORBITERS", 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(-251f, -1f), new Vector2(180f, 34f), TextAnchor.MiddleLeft);
-            SetUniformScale(label.rectTransform, OrbiterStripItemScale);
+            SetUniformScale(label.rectTransform, OrbiterStripLabelScale);
 
             int active = state != null ? state.ActiveOrbiters.Count : 0;
             for (int i = 0; i < SquareFlowConstants.MaxActiveOrbiters; i++)
@@ -309,7 +310,7 @@ namespace SquareFlow.UI
             }
 
             TMP_Text count = AddText(strip, active.ToString(CultureInfo.InvariantCulture) + "/" + SquareFlowConstants.MaxActiveOrbiters, 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(367f, -1f), new Vector2(90f, 30f), TextAnchor.MiddleRight);
-            SetUniformScale(count.rectTransform, OrbiterStripItemScale);
+            SetUniformScale(count.rectTransform, OrbiterStripLabelScale);
         }
 
         private void RenderBoardFrame(SquareFlowGameplayScreenLayout screen)
