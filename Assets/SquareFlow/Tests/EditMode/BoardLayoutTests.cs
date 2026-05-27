@@ -623,9 +623,9 @@ namespace SquareFlow.Tests
                 Assert.That(statusBarRect.sizeDelta.y, Is.EqualTo(86f));
                 Assert.That(statusBarRect.anchoredPosition.y, Is.EqualTo(-136f));
 
-                TMP_Text moves = FindText(status, "0 moves");
+                TMP_Text moves = FindText(status, "0 MOVES");
                 Assert.That(moves, Is.Not.Null);
-                Assert.That(moves.fontSize, Is.EqualTo(32f));
+                Assert.That(moves.fontSize, Is.EqualTo(36f));
                 AssertTextOutlineDarkerThanFill(moves);
                 Assert.That(RightEdge(moves.rectTransform), Is.LessThan(LeftEdge(hudActions.GetComponent<RectTransform>())));
 
@@ -634,12 +634,12 @@ namespace SquareFlow.Tests
                 Assert.That(orbiterLabel, Is.Not.Null);
                 Assert.That(orbiterLabel.fontSize * orbiterLabel.rectTransform.localScale.x, Is.EqualTo(moves.fontSize).Within(0.001f));
                 AssertTextOutlineDarkerThanFill(orbiterLabel);
-                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.6f).Within(0.001f));
-                Assert.That(orbiterLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-360f));
+                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.5f).Within(0.001f));
+                Assert.That(orbiterLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-375f));
                 Assert.That(LeftEdge(orbiterLabel.rectTransform), Is.EqualTo(LeftEdge(moves.rectTransform)).Within(6f));
                 TMP_Text orbiterCount = FindText(strip, "0/5");
                 Assert.That(orbiterCount, Is.Not.Null);
-                Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.6f).Within(0.001f));
+                Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.5f).Within(0.001f));
                 RectTransform[] orbiterDots = NamedChildren(strip, "OrbiterDot");
                 Assert.That(orbiterDots.Length, Is.EqualTo(SquareFlowConstants.MaxActiveOrbiters));
                 Assert.That(orbiterDots[0].anchoredPosition.x, Is.EqualTo(-230f));
