@@ -23,7 +23,7 @@ namespace SquareFlow.UI
         private const float WaitingQueueSpacing = 128f;
         private const float ResponsiveHorizontalMargin = 8f;
         private const float OrbiterStripItemScale = 2.94f;
-        private const float OrbiterStripLabelScale = 1.62f;
+        private const float OrbiterStripLabelScale = 1.6f;
         private const float OrbiterStripLabelX = -360f;
         private const float OrbiterStripFirstDotX = -230f;
         private const float OrbiterStripDotSpacing = 54f;
@@ -258,7 +258,7 @@ namespace SquareFlow.UI
 
             RectTransform status = AddGlassPanel(root, "GameStatusBar", screen.StatusBarSize);
             SetTopStretch(status, safeArea.w + screen.StatusBarTopOffset, screen.StatusBarSize.y, 0f);
-            comboText = AddText(status, string.Empty, 30, FontStyle.Bold, HeaderLabelColor(), new Vector2(-360f, 0f), new Vector2(300f, 44f), TextAnchor.MiddleLeft);
+            comboText = AddText(status, string.Empty, 32, FontStyle.Bold, HeaderLabelColor(), new Vector2(-360f, 0f), new Vector2(300f, 46f), TextAnchor.MiddleLeft);
 
             RectTransform actions = AddContainer(status, "HudActions", screen.ActionSize);
             SetAnchored(actions, screen.ActionPosition);
@@ -317,7 +317,7 @@ namespace SquareFlow.UI
             Vector4 safeArea = CurrentSafeAreaPadding();
             RectTransform strip = AddGlassPanel(root, "OrbiterStrip", screen.OrbiterStripSize);
             SetTopStretch(strip, safeArea.w + screen.OrbiterStripTopOffset, screen.OrbiterStripSize.y, ResponsiveHorizontalMargin);
-            TMP_Text label = AddText(strip, "ORBITERS", 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(OrbiterStripLabelX, -1f), new Vector2(180f, 34f), TextAnchor.MiddleLeft);
+            TMP_Text label = AddText(strip, "ORBITERS", 20, FontStyle.Bold, HeaderLabelColor(), new Vector2(OrbiterStripLabelX, -1f), new Vector2(180f, 36f), TextAnchor.MiddleLeft);
             SetUniformScale(label.rectTransform, OrbiterStripLabelScale);
 
             int active = state != null ? state.ActiveOrbiters.Count : 0;
@@ -1608,11 +1608,8 @@ namespace SquareFlow.UI
 
         private static Color32 TextOutlineColor(Color color)
         {
-            Color dark = Color.Lerp(new Color32(42, 36, 104, 255), Color.black, 0.12f);
-            if (color.r + color.g + color.b < 1.5f)
-                return new Color32(255, 255, 255, 190);
-
-            return ColorWithAlpha(dark, 0.86f);
+            Color dark = Color.Lerp(color, Color.black, 0.42f);
+            return ColorWithAlpha(dark, 0.88f);
         }
 
         private static TextAlignmentOptions ToTmpAlignment(TextAnchor alignment)

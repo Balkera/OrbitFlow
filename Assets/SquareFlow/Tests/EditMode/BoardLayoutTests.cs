@@ -625,18 +625,21 @@ namespace SquareFlow.Tests
 
                 TMP_Text moves = FindText(status, "0 moves");
                 Assert.That(moves, Is.Not.Null);
-                Assert.That(moves.fontSize, Is.EqualTo(30f));
+                Assert.That(moves.fontSize, Is.EqualTo(32f));
+                AssertTextOutlineDarkerThanFill(moves);
                 Assert.That(RightEdge(moves.rectTransform), Is.LessThan(LeftEdge(hudActions.GetComponent<RectTransform>())));
 
                 Transform strip = canvas.Find("OrbiterStrip");
                 TMP_Text orbiterLabel = FindText(strip, "ORBITERS");
                 Assert.That(orbiterLabel, Is.Not.Null);
-                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.62f).Within(0.001f));
+                Assert.That(orbiterLabel.fontSize * orbiterLabel.rectTransform.localScale.x, Is.EqualTo(moves.fontSize).Within(0.001f));
+                AssertTextOutlineDarkerThanFill(orbiterLabel);
+                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.6f).Within(0.001f));
                 Assert.That(orbiterLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-360f));
                 Assert.That(LeftEdge(orbiterLabel.rectTransform), Is.EqualTo(LeftEdge(moves.rectTransform)).Within(6f));
                 TMP_Text orbiterCount = FindText(strip, "0/5");
                 Assert.That(orbiterCount, Is.Not.Null);
-                Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.62f).Within(0.001f));
+                Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.6f).Within(0.001f));
                 RectTransform[] orbiterDots = NamedChildren(strip, "OrbiterDot");
                 Assert.That(orbiterDots.Length, Is.EqualTo(SquareFlowConstants.MaxActiveOrbiters));
                 Assert.That(orbiterDots[0].anchoredPosition.x, Is.EqualTo(-230f));
@@ -900,6 +903,22 @@ namespace SquareFlow.Tests
             Assert.That(text.font, Is.Not.Null);
             Assert.That(text.font.name, Does.Contain("LilitaOne"));
             Assert.That(text.outlineWidth, Is.GreaterThan(0f));
+            AssertTextOutlineDarkerThanFill(text);
+        }
+
+        private static void AssertTextOutlineDarkerThanFill(TMP_Text text)
+        {
+            Assert.That(text, Is.Not.Null);
+            Color fill = text.color;
+            Color outline = text.outlineColor;
+            Assert.That(outline.a, Is.GreaterThan(0f));
+            if (Luminance(fill) > 0.02f)
+                Assert.That(Luminance(outline), Is.LessThan(Luminance(fill)));
+        }
+
+        private static float Luminance(Color color)
+        {
+            return color.r * 0.2126f + color.g * 0.7152f + color.b * 0.0722f;
         }
 
         private static void AssertAllGuiProFonts(Transform parent)
