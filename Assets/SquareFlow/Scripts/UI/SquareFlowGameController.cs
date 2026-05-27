@@ -35,6 +35,7 @@ namespace SquareFlow.UI
         private const float ShooterDockTokenSize = 112f;
         private const float ReadableTextScale = 2f;
         private const float PanelPixelsPerUnitMultiplier = 0.25f;
+        private const float MenuContentTextOutlineWidth = 0.5f;
 
         private readonly List<GameObject> dynamicObjects = new List<GameObject>();
         private SaveDataService saveData;
@@ -173,7 +174,7 @@ namespace SquareFlow.UI
             ApplyPanelPixelsPerUnitMultiplier(stats);
             SetAnchored(stats, startLayout.StatsPosition);
             ApplyOutline(stats, ColorWithAlpha(theme.Border, 0.58f), 1f);
-            AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-220f, -2f), theme.Score);
+            AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-220f, -2f), MenuSelectedTextColor());
             AddVerticalDivider(stats, 0f);
             AddMenuStat(stats, "BOARD", shape.Name, new Vector2(220f, -2f), MenuBoardValueColor());
 
@@ -184,14 +185,15 @@ namespace SquareFlow.UI
             SetAnchored(selector, startLayout.LevelSelectorPosition);
             RenderLevelSelector(selector);
 
-            Button play = AddButton(content, "Play", startLayout.PlayButtonPosition, startLayout.PlayButtonSize, theme.PlayButton, theme.Text, StartLevel, 44);
+            Button play = AddButton(content, "PLAY", startLayout.PlayButtonPosition, startLayout.PlayButtonSize, theme.PlayButton, Color.white, StartLevel, 44);
             play.gameObject.name = "PlayButton";
             RectTransform shine = AddPanel(play.GetComponent<RectTransform>(), "PlayButtonShine", new Vector2(startLayout.PlayButtonSize.x * 0.46f, startLayout.PlayButtonSize.y), ColorWithAlpha(theme.PlayButtonAlt, 0f));
             SetAnchored(shine, new Vector2(-startLayout.PlayButtonSize.x * 0.24f, 0f));
             SetRaycastTarget(shine, false);
             shine.SetAsFirstSibling();
 
-            AddButton(content, "Reset All", startLayout.ResetButtonPosition, startLayout.ResetButtonSize, ColorWithAlpha(theme.Red, 0.14f), theme.Red, ResetProgress, 18).gameObject.name = "ResetAllButton";
+            AddButton(content, "Reset All", startLayout.ResetButtonPosition, startLayout.ResetButtonSize, ColorWithAlpha(theme.Red, 0.14f), Color.white, ResetProgress, 18).gameObject.name = "ResetAllButton";
+            ApplyMenuContentTextOutline(content);
         }
 
         private void StartLevel()
@@ -373,8 +375,8 @@ namespace SquareFlow.UI
         {
             int capacity = SquareFlowConstants.WaitQueueLimit;
             float startX = WaitingQueueStartX(capacity);
-            AddText(queue, "BENCH", 30, FontStyle.Bold, HeaderLabelColor(), new Vector2(-435f, 0f), new Vector2(190f, 70f), TextAnchor.MiddleLeft);
-            AddText(queue, state.WaitingQueue.Count.ToString(CultureInfo.InvariantCulture) + "/" + capacity, 34, FontStyle.Bold, HeaderLabelColor(), new Vector2(435f, 0f), new Vector2(170f, 70f), TextAnchor.MiddleRight);
+            AddText(queue, "BENCH", 24, FontStyle.Bold, HeaderLabelColor(), new Vector2(-380f, 0f), new Vector2(190f, 70f), TextAnchor.MiddleLeft);
+            AddText(queue, state.WaitingQueue.Count.ToString(CultureInfo.InvariantCulture) + "/" + capacity, 31, FontStyle.Bold, HeaderLabelColor(), new Vector2(375f, 0f), new Vector2(170f, 70f), TextAnchor.MiddleRight);
 
             for (int i = 0; i < capacity; i++)
             {
@@ -579,13 +581,30 @@ namespace SquareFlow.UI
 
         private void AddMenuStat(RectTransform parent, string label, string value, Vector2 position, Color valueColor)
         {
-            AddText(parent, label, 18, FontStyle.Bold, theme.SubtleText, position + new Vector2(0f, 36f), new Vector2(180f, 30f));
-            AddText(parent, value, 52, FontStyle.Bold, valueColor, position + new Vector2(0f, -18f), new Vector2(240f, 66f));
+            AddText(parent, label, 55, FontStyle.Bold, MenuStatsLabelColor(), position + new Vector2(0f, 40f), new Vector2(360f, 68f));
+            AddText(parent, value, 80, FontStyle.Bold, valueColor, position + new Vector2(0f, -30f), new Vector2(360f, 95f));
+        }
+
+        private void ApplyMenuContentTextOutline(RectTransform content)
+        {
+            TMP_Text[] labels = content.GetComponentsInChildren<TMP_Text>(true);
+            for (int i = 0; i < labels.Length; i++)
+                labels[i].outlineWidth = MenuContentTextOutlineWidth;
         }
 
         private static Color MenuBoardValueColor()
         {
-            return new Color32(23, 60, 156, 255);
+            return MenuSelectedTextColor();
+        }
+
+        private static Color MenuSelectedTextColor()
+        {
+            return new Color32(255, 220, 54, 255);
+        }
+
+        private static Color MenuStatsLabelColor()
+        {
+            return new Color32(173, 165, 255, 255);
         }
 
         private void AddMenuLogo(RectTransform parent, Vector2 position, Vector2 size)
@@ -625,7 +644,7 @@ namespace SquareFlow.UI
                 float y = (0.5f - row) * verticalSpacing;
                 bool selected = level == saveData.Level;
                 Color fill = selected ? ColorWithAlpha(theme.SelectedLevel, 0.16f) : completed.Contains(level) ? ColorWithAlpha(theme.Score, 0.18f) : ColorWithAlpha(theme.Blue, 0.34f);
-                Color text = selected ? theme.Score : theme.Blue;
+                Color text = selected ? MenuSelectedTextColor() : Color.white;
                 Button button = AddButton(panel, level.ToString(), new Vector2(x, y), buttonSize, fill, text, () => SelectLevel(level), 32);
                 button.gameObject.name = "LevelButton";
                 Outline outline = button.GetComponent<Outline>();
@@ -996,7 +1015,7 @@ namespace SquareFlow.UI
             if (string.IsNullOrEmpty(label))
                 return null;
 
-            if (label == "Play" || label == "Next Level" || label == "Try Again")
+            if (label == "Play" || label == "PLAY" || label == "Next Level" || label == "Try Again")
                 return guiProPlayButtonSprite != null ? guiProPlayButtonSprite : guiProConfirmButtonSprite;
 
             if (label == "Reset All")

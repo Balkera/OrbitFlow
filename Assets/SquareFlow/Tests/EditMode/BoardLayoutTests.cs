@@ -3,6 +3,7 @@ using System.Reflection;
 using TMPro;
 using NUnit.Framework;
 using SquareFlow.Core;
+using SquareFlow.Runtime;
 using SquareFlow.UI;
 using UnityEditor;
 using UnityEngine;
@@ -185,6 +186,36 @@ namespace SquareFlow.Tests
         }
 
         [Test]
+        public void BoardWorldViewTintsOnlyGridCellTrayFaces()
+        {
+            GameObject host = new GameObject("BoardWorldViewTintTest");
+
+            try
+            {
+                BoardShape shape = new BoardShape("TintTest", BoardShape.Mask(new[]{1, 1}));
+                BoardCell[,] grid = new BoardCell[1, 2];
+                grid[0, 0] = BoardCell.Empty;
+                grid[0, 1] = BoardCell.Normal(FlowColor.Red, 2);
+                GameState state = GameState.Create(shape, grid, new List<Shooter>[0], 1);
+                BoardLayout board = BoardLayout.Compute(shape.Rows, shape.Cols, 620f);
+                BoardWorldView view = host.AddComponent<BoardWorldView>();
+
+                view.Bind(state, board, MobileWorldLayout.Create(board), new SquareFlowTheme(false));
+
+                SpriteRenderer trayFace = host.transform.Find("WorldCell_0_0/Face").GetComponent<SpriteRenderer>();
+                SpriteRenderer blockFace = host.transform.Find("WorldCell_0_1/Face").GetComponent<SpriteRenderer>();
+                Assert.That(trayFace.sprite.texture.name, Is.EqualTo("FlowGridCellTray"));
+                Assert.That(trayFace.color, Is.EqualTo((Color)new Color32(220, 220, 220, 175)));
+                Assert.That(blockFace.sprite.texture.name, Is.EqualTo("FlowBlockRed"));
+                Assert.That(blockFace.color, Is.EqualTo(Color.white));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void TmpExamplePrefabsDoNotKeepObsoleteCanvasRenderer()
         {
             string[] paths =
@@ -363,8 +394,10 @@ namespace SquareFlow.Tests
                 Assert.That(waitingButtons[0].anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
                 TMP_Text benchLabel = FindText(queue, "BENCH");
                 TMP_Text countLabel = FindText(queue, "2/5");
-                AssertReadableAutosizedText(benchLabel, 30f);
-                AssertReadableAutosizedText(countLabel, 34f);
+                AssertReadableAutosizedText(benchLabel, 24f);
+                AssertReadableAutosizedText(countLabel, 31f);
+                Assert.That(benchLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-380f).Within(0.001f));
+                Assert.That(countLabel.rectTransform.anchoredPosition.x, Is.EqualTo(375f).Within(0.001f));
                 Assert.That(RightEdge(benchLabel.rectTransform), Is.LessThan(LeftEdge(waitingSlots[0])));
                 Assert.That(LeftEdge(countLabel.rectTransform), Is.GreaterThan(RightEdge(waitingSlots[waitingSlots.Length - 1])));
             }
@@ -417,7 +450,7 @@ namespace SquareFlow.Tests
                 if (host.transform.Find("SquareFlowCanvas") == null)
                     InvokePrivate(controller, "Awake");
 
-                InvokePrivate(controller, "ShowMenu");
+                InvokePrivate(controller, "SelectLevel", 2);
 
                 Transform canvas = host.transform.Find("SquareFlowCanvas");
                 Assert.That(canvas, Is.Not.Null);
@@ -467,15 +500,36 @@ namespace SquareFlow.Tests
                 Assert.That(content.Find("MenuStatsCard").GetComponent<RectTransform>().sizeDelta.x, Is.EqualTo(800f));
                 Assert.That(content.Find("MenuStatsCard").GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(25f));
                 Assert.That(content.Find("LevelSelector").GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(-210f));
-                Assert.That(FindText(content.Find("MenuStatsCard"), "Diamond").color, Is.EqualTo((Color)new Color32(23, 60, 156, 255)));
+                Transform statsCard = content.Find("MenuStatsCard");
+                TMP_Text levelLabel = FindText(statsCard, "LEVEL");
+                TMP_Text boardLabel = FindText(statsCard, "BOARD");
+                TMP_Text levelValue = FindText(statsCard, "2");
+                TMP_Text boardValue = FindText(statsCard, "Dino");
+                AssertReadableAutosizedText(levelLabel, 55f);
+                AssertReadableAutosizedText(boardLabel, 55f);
+                AssertReadableAutosizedText(levelValue, 80f);
+                AssertReadableAutosizedText(boardValue, 80f);
+                Assert.That(levelLabel.rectTransform.sizeDelta, Is.EqualTo(new Vector2(360f, 68f)));
+                Assert.That(boardLabel.rectTransform.sizeDelta, Is.EqualTo(new Vector2(360f, 68f)));
+                Assert.That(levelValue.rectTransform.sizeDelta, Is.EqualTo(new Vector2(360f, 95f)));
+                Assert.That(boardValue.rectTransform.sizeDelta, Is.EqualTo(new Vector2(360f, 95f)));
+                Assert.That(TopEdge(levelLabel.rectTransform), Is.LessThanOrEqualTo(74f));
+                Assert.That(TopEdge(boardLabel.rectTransform), Is.LessThanOrEqualTo(74f));
+                Assert.That(BottomEdge(levelValue.rectTransform), Is.GreaterThanOrEqualTo(-77f));
+                Assert.That(BottomEdge(boardValue.rectTransform), Is.GreaterThanOrEqualTo(-77f));
+                Assert.That(levelValue.color, Is.EqualTo((Color)new Color32(255, 220, 54, 255)));
+                Assert.That(boardValue.color, Is.EqualTo((Color)new Color32(255, 220, 54, 255)));
+                Assert.That(levelLabel.color, Is.EqualTo((Color)new Color32(173, 165, 255, 255)));
+                Assert.That(boardLabel.color, Is.EqualTo((Color)new Color32(173, 165, 255, 255)));
 
-                TMP_Text playLabel = FindText(content, "Play");
+                TMP_Text playLabel = FindText(content, "PLAY");
                 RectTransform playButton = playLabel.transform.parent.GetComponent<RectTransform>();
                 Assert.That(playButton.gameObject.name, Is.EqualTo("PlayButton"));
                 Assert.That(playButton.sizeDelta.x, Is.EqualTo(410f));
                 Assert.That(playButton.sizeDelta.y, Is.EqualTo(128f));
                 Assert.That(playButton.anchoredPosition.y, Is.EqualTo(-485f));
                 AssertReadableAutosizedText(playLabel, 44f);
+                Assert.That(playLabel.color, Is.EqualTo(Color.white));
                 Transform shine = playButton.Find("PlayButtonShine");
                 Assert.That(shine, Is.Not.Null);
                 Assert.That(shine.GetComponent<Image>().raycastTarget, Is.False);
@@ -483,10 +537,13 @@ namespace SquareFlow.Tests
                 Assert.That(resetButton, Is.Not.Null);
                 Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(-615f));
                 Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.LessThan(playButton.anchoredPosition.y));
-                AssertReadableAutosizedText(FindText(resetButton, "Reset All"), 18f);
+                TMP_Text resetLabel = FindText(resetButton, "Reset All");
+                AssertReadableAutosizedText(resetLabel, 18f);
+                Assert.That(resetLabel.color, Is.EqualTo(Color.white));
                 Assert.That(FindText(content.Find("MenuStatsCard"), "MAX ORBS"), Is.Null);
                 Assert.That(FindText(content, "HP blocks"), Is.Null);
                 AssertAllTextsUseReadableAutosizing(content);
+                AssertAllTextsUseOutlineWidth(content, 0.5f);
 
                 Assert.That(content.GetComponentsInChildren<Text>().Length, Is.EqualTo(0));
 
@@ -504,6 +561,7 @@ namespace SquareFlow.Tests
                     Assert.That(button.sizeDelta.x, Is.EqualTo(126f));
                     Assert.That(button.sizeDelta.y, Is.EqualTo(92f));
                     AssertReadableAutosizedText(labels[i], 32f);
+                    Assert.That(labels[i].color, Is.EqualTo(level == 2 ? (Color)new Color32(255, 220, 54, 255) : Color.white));
                     if (button.anchoredPosition.y > 0f)
                         topRowCount++;
                     else
@@ -548,7 +606,7 @@ namespace SquareFlow.Tests
 
                 Transform playButton = content.Find("PlayButton");
                 AssertGuiProButton(playButton, "Button01_225_Yellow");
-                AssertGuiProFont(FindText(playButton, "Play"));
+                AssertGuiProFont(FindText(playButton, "PLAY"));
 
                 Transform resetButton = content.Find("ResetAllButton");
                 AssertGuiProButton(resetButton, "Button01_175_Red");
@@ -565,6 +623,7 @@ namespace SquareFlow.Tests
 
                 Transform levelSelector = content.Find("LevelSelector");
                 AssertAllGuiProFonts(levelSelector);
+                AssertAllTextsUseOutlineWidth(content, 0.5f);
 
                 Button[] buttons = content.GetComponentsInChildren<Button>(true);
                 Assert.That(buttons.Length, Is.EqualTo(BoardShapeCatalog.Count + 2));
@@ -629,6 +688,26 @@ namespace SquareFlow.Tests
                 Assert.That(worldCellLabels.Length, Is.GreaterThan(0));
                 for (int i = 0; i < worldCellLabels.Length; i++)
                     Assert.That(worldCellLabels[i].rectTransform.localPosition.y, Is.EqualTo(0.05f).Within(0.001f), worldCellLabels[i].name);
+                SpriteRenderer[] worldCellRenderers = boardWorldView.GetComponentsInChildren<SpriteRenderer>(true);
+                int faceRendererCount = 0;
+                int blockFaceRendererCount = 0;
+                Color expectedGridCellTrayColor = new Color32(220, 220, 220, 175);
+                for (int i = 0; i < worldCellRenderers.Length; i++)
+                {
+                    if (worldCellRenderers[i].name != "Face") continue;
+                    faceRendererCount++;
+                    string textureName = worldCellRenderers[i].sprite.texture.name;
+                    if (textureName == "FlowGridCellTray")
+                        Assert.That(worldCellRenderers[i].color, Is.EqualTo(expectedGridCellTrayColor), worldCellRenderers[i].transform.parent.name);
+                    else if (textureName.StartsWith("FlowBlock"))
+                    {
+                        blockFaceRendererCount++;
+                        Assert.That(worldCellRenderers[i].color, Is.EqualTo(Color.white), worldCellRenderers[i].transform.parent.name);
+                    }
+                }
+
+                Assert.That(faceRendererCount, Is.EqualTo(worldCellLabels.Length));
+                Assert.That(blockFaceRendererCount, Is.GreaterThan(0));
                 Transform header = canvas.Find("GameHeader");
                 Assert.That(header, Is.Not.Null);
                 Assert.That(header.GetComponent<Image>(), Is.Null);
@@ -714,10 +793,12 @@ namespace SquareFlow.Tests
                 Assert.That(waitingSlots[0].localScale, Is.EqualTo(Vector3.one));
                 TMP_Text waitingLabel = FindText(waiting, "BENCH");
                 Assert.That(waitingLabel, Is.Not.Null);
-                AssertReadableAutosizedText(waitingLabel, 30f);
+                AssertReadableAutosizedText(waitingLabel, 24f);
                 TMP_Text waitingCount = FindText(waiting, "0/5");
                 Assert.That(waitingCount, Is.Not.Null);
-                AssertReadableAutosizedText(waitingCount, 34f);
+                AssertReadableAutosizedText(waitingCount, 31f);
+                Assert.That(waitingLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-380f).Within(0.001f));
+                Assert.That(waitingCount.rectTransform.anchoredPosition.x, Is.EqualTo(375f).Within(0.001f));
                 Assert.That(RightEdge(waitingLabel.rectTransform), Is.LessThan(LeftEdge(waitingSlots[0])));
                 Assert.That(LeftEdge(waitingCount.rectTransform), Is.GreaterThan(RightEdge(waitingSlots[waitingSlots.Length - 1])));
                 Assert.That(waitingLabel.rectTransform.anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
@@ -1014,6 +1095,15 @@ namespace SquareFlow.Tests
                 Assert.That(labels[i].fontSizeMax, Is.EqualTo(labels[i].fontSizeMin * 2f).Within(0.001f), labels[i].text);
                 Assert.That(labels[i].overflowMode, Is.EqualTo(TextOverflowModes.Truncate), labels[i].text);
             }
+        }
+
+        private static void AssertAllTextsUseOutlineWidth(Transform parent, float expectedOutlineWidth)
+        {
+            Assert.That(parent, Is.Not.Null);
+            TMP_Text[] labels = parent.GetComponentsInChildren<TMP_Text>(true);
+            Assert.That(labels.Length, Is.GreaterThan(0));
+            for (int i = 0; i < labels.Length; i++)
+                Assert.That(labels[i].outlineWidth, Is.EqualTo(expectedOutlineWidth).Within(0.001f), labels[i].text);
         }
 
         private static void AssertReadableAutosizedText(TMP_Text text, float previousSize)

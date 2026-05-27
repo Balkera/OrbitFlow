@@ -67,6 +67,15 @@ namespace SquareFlow.Runtime
             }
         }
 
+        public static Sprite GridCellTray
+        {
+            get
+            {
+                Ensure();
+                return gridCellTray;
+            }
+        }
+
         public static Sprite BlockForCell(BoardCell cell)
         {
             Ensure();

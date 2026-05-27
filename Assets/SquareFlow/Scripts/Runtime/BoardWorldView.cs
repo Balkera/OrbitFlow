@@ -13,6 +13,7 @@ namespace SquareFlow.Runtime
         private const int HighlightSortingOrder = 2;
         private const int LabelSortingOrder = 7;
         private const int HitFlashSortingOrder = 8;
+        private static readonly Color32 WorldCellTrayTint = new Color32(220, 220, 220, 175);
 
         private readonly List<CellView> cells = new List<CellView>();
         private BoardShape boundShape;
@@ -79,8 +80,9 @@ namespace SquareFlow.Runtime
                 cell.BasePosition = center;
                 Sprite faceSprite = SquareFlowWorldSprites.BlockForCell(boardCell);
                 bool usesTexturedSprite = faceSprite != SquareFlowWorldSprites.RoundedRect;
+                bool usesGridCellTray = faceSprite == SquareFlowWorldSprites.GridCellTray;
                 cell.Face.sprite = faceSprite;
-                cell.Face.color = usesTexturedSprite ? Color.white : CellColor(boardCell, theme);
+                cell.Face.color = usesGridCellTray ? WorldCellTrayTint : usesTexturedSprite ? Color.white : CellColor(boardCell, theme);
                 cell.Depth.gameObject.SetActive(boardCell.IsOccupied && !usesTexturedSprite);
                 cell.Highlight.gameObject.SetActive(boardCell.IsOccupied && !usesTexturedSprite);
                 cell.Depth.color = boardCell.IsOccupied ? LerpColor(cell.Face.color, Color.black, SquareFlowVisualMetrics.TileDepthDarkenAmount) : Color.clear;
