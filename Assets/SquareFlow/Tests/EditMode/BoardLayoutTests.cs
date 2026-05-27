@@ -588,8 +588,8 @@ namespace SquareFlow.Tests
                 AssertPanelImage(bestCard);
                 Assert.That(FindText(scoreCard, "SCORE"), Is.Not.Null);
                 Assert.That(FindText(bestCard, "BEST"), Is.Not.Null);
-                AssertHeaderIconImage(scoreCard);
-                AssertHeaderIconImage(bestCard);
+                AssertHeaderIcon(scoreCard, "FlowGem");
+                AssertHeaderIcon(bestCard, "FlowCrown");
                 AssertPanelImage(header.Find("LevelBadge"));
                 Assert.That(FindText(header.Find("LevelBadge"), "LEVEL"), Is.Not.Null);
                 Assert.That(FindText(scoreCard, "0"), Is.Not.Null);
@@ -632,11 +632,14 @@ namespace SquareFlow.Tests
                 TMP_Text orbiterLabel = FindText(strip, "ORBITERS");
                 Assert.That(orbiterLabel, Is.Not.Null);
                 Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.62f).Within(0.001f));
+                Assert.That(orbiterLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-360f));
+                Assert.That(LeftEdge(orbiterLabel.rectTransform), Is.EqualTo(LeftEdge(moves.rectTransform)).Within(6f));
                 TMP_Text orbiterCount = FindText(strip, "0/5");
                 Assert.That(orbiterCount, Is.Not.Null);
                 Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.62f).Within(0.001f));
                 RectTransform[] orbiterDots = NamedChildren(strip, "OrbiterDot");
                 Assert.That(orbiterDots.Length, Is.EqualTo(SquareFlowConstants.MaxActiveOrbiters));
+                Assert.That(orbiterDots[0].anchoredPosition.x, Is.EqualTo(-230f));
                 Assert.That(orbiterDots[0].localScale.x, Is.EqualTo(2.94f).Within(0.001f));
 
                 Transform waiting = canvas.Find("WaitingQueue");
@@ -739,6 +742,7 @@ namespace SquareFlow.Tests
                     new Vector2(-470f, -52f),
                     new Vector2(-170f, 52f));
                 AssertGuiProPanel(header.Find("ScoreCard"));
+                AssertHeaderIcon(header.Find("ScoreCard"), "FlowGem");
                 AssertRectTransformLayout(
                     header.Find("BestCard"),
                     new Vector2(0.5f, 0.5f),
@@ -747,6 +751,7 @@ namespace SquareFlow.Tests
                     new Vector2(-150f, -52f),
                     new Vector2(150f, 52f));
                 AssertGuiProPanel(header.Find("BestCard"));
+                AssertHeaderIcon(header.Find("BestCard"), "FlowCrown");
                 AssertRectTransformLayout(
                     header.Find("LevelBadge"),
                     new Vector2(0.5f, 0.5f),

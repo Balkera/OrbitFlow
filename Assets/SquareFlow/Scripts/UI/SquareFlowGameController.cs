@@ -24,6 +24,9 @@ namespace SquareFlow.UI
         private const float ResponsiveHorizontalMargin = 8f;
         private const float OrbiterStripItemScale = 2.94f;
         private const float OrbiterStripLabelScale = 1.62f;
+        private const float OrbiterStripLabelX = -360f;
+        private const float OrbiterStripFirstDotX = -230f;
+        private const float OrbiterStripDotSpacing = 54f;
         private const float WaitingQueueLabelScale = 2.08f;
         private const float WaitingQueueSlotSize = 112f;
         private const float WaitingQueueTokenSize = 112f;
@@ -245,8 +248,8 @@ namespace SquareFlow.UI
             RectTransform hud = AddContainer(root, "GameHeader", screen.HudSize);
             SetTopStretch(hud, safeArea.w, screen.HudSize.y, 0f);
             Vector2 headerCardSize = new Vector2(300f, 104f);
-            hudText = AddHeaderStatCard(hud, "ScoreCard", new Vector2(-320f, 0f), headerCardSize, "SCORE", 52, crownSprite);
-            bestText = AddHeaderStatCard(hud, "BestCard", Vector2.zero, headerCardSize, "BEST", 46, gemSprite);
+            hudText = AddHeaderStatCard(hud, "ScoreCard", new Vector2(-320f, 0f), headerCardSize, "SCORE", 52, gemSprite);
+            bestText = AddHeaderStatCard(hud, "BestCard", Vector2.zero, headerCardSize, "BEST", 46, crownSprite);
 
             RectTransform levelBadge = AddGlassPanel(hud, "LevelBadge", headerCardSize);
             SetAnchored(levelBadge, new Vector2(320f, 0f));
@@ -314,7 +317,7 @@ namespace SquareFlow.UI
             Vector4 safeArea = CurrentSafeAreaPadding();
             RectTransform strip = AddGlassPanel(root, "OrbiterStrip", screen.OrbiterStripSize);
             SetTopStretch(strip, safeArea.w + screen.OrbiterStripTopOffset, screen.OrbiterStripSize.y, ResponsiveHorizontalMargin);
-            TMP_Text label = AddText(strip, "ORBITERS", 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(-251f, -1f), new Vector2(180f, 34f), TextAnchor.MiddleLeft);
+            TMP_Text label = AddText(strip, "ORBITERS", 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(OrbiterStripLabelX, -1f), new Vector2(180f, 34f), TextAnchor.MiddleLeft);
             SetUniformScale(label.rectTransform, OrbiterStripLabelScale);
 
             int active = state != null ? state.ActiveOrbiters.Count : 0;
@@ -322,7 +325,7 @@ namespace SquareFlow.UI
             {
                 Color fill = i < active ? HeaderLabelColor() : ColorWithAlpha(theme.InactiveSlot, 0.92f);
                 RectTransform dot = AddPanel(strip, "OrbiterDot", Vector2.one * 28f, fill, circleSprite);
-                SetAnchored(dot, new Vector2(-161f + i * 54f, 0f));
+                SetAnchored(dot, new Vector2(OrbiterStripFirstDotX + i * OrbiterStripDotSpacing, 0f));
                 SetUniformScale(dot, OrbiterStripItemScale);
                 ApplyOutline(dot, ColorWithAlpha(Color.white, 0.68f), 1f);
             }
