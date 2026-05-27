@@ -245,8 +245,8 @@ namespace SquareFlow.Tests
             Assert.That(layout.HudPosition, Is.EqualTo(new Vector2(0f, 896f)));
             Assert.That(layout.StatusBarSize, Is.EqualTo(new Vector2(1080f, 86f)));
             Assert.That(layout.StatusBarTopOffset, Is.EqualTo(136f));
-            Assert.That(layout.ActionSize.x, Is.EqualTo(360f));
-            Assert.That(layout.ActionPosition.x, Is.EqualTo(300f));
+            Assert.That(layout.ActionSize.x, Is.EqualTo(276f));
+            Assert.That(layout.ActionPosition.x, Is.EqualTo(180f));
             Assert.That(layout.ActionPosition.y, Is.EqualTo(0f));
             Assert.That(layout.UtilityButtonSize, Is.EqualTo(new Vector2(78f, 78f)));
             Assert.That(layout.OrbiterStripSize, Is.EqualTo(new Vector2(1064f, 92f)));
@@ -381,14 +381,15 @@ namespace SquareFlow.Tests
 
                 RectTransform[] waitingSlots = NamedChildren(queue, "WaitingSlot");
                 Assert.That(waitingSlots.Length, Is.EqualTo(SquareFlowConstants.WaitQueueLimit));
-                Assert.That(waitingSlots[0].sizeDelta, Is.EqualTo(Vector2.one * 112f));
+                Assert.That(waitingSlots[0].sizeDelta, Is.EqualTo(Vector2.one * 80f));
                 Assert.That(waitingSlots[0].localScale, Is.EqualTo(Vector3.one));
+                Assert.That(waitingSlots[0].GetComponent<Image>().color.a, Is.EqualTo(1f).Within(0.001f));
 
                 RectTransform[] waitingButtons = NamedChildren(queue, "ShooterButton");
                 Assert.That(waitingButtons.Length, Is.EqualTo(2));
-                Assert.That(waitingButtons[0].sizeDelta, Is.EqualTo(Vector2.one * 112f));
+                Assert.That(waitingButtons[0].sizeDelta, Is.EqualTo(Vector2.one * 80f));
                 Assert.That(waitingButtons[0].localScale, Is.EqualTo(Vector3.one));
-                Assert.That(waitingButtons[1].anchoredPosition.x - waitingButtons[0].anchoredPosition.x, Is.EqualTo(128f).Within(0.001f));
+                Assert.That(waitingButtons[1].anchoredPosition.x - waitingButtons[0].anchoredPosition.x, Is.EqualTo(86f).Within(0.001f));
                 Assert.That(RightEdge(waitingButtons[0]), Is.LessThan(LeftEdge(waitingButtons[1])));
                 Assert.That(waitingSlots[0].anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
                 Assert.That(waitingButtons[0].anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
@@ -396,10 +397,14 @@ namespace SquareFlow.Tests
                 TMP_Text countLabel = FindText(queue, "2/5");
                 AssertReadableAutosizedText(benchLabel, 24f);
                 AssertReadableAutosizedText(countLabel, 31f);
-                Assert.That(benchLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-380f).Within(0.001f));
-                Assert.That(countLabel.rectTransform.anchoredPosition.x, Is.EqualTo(375f).Within(0.001f));
-                Assert.That(RightEdge(benchLabel.rectTransform), Is.LessThan(LeftEdge(waitingSlots[0])));
-                Assert.That(LeftEdge(countLabel.rectTransform), Is.GreaterThan(RightEdge(waitingSlots[waitingSlots.Length - 1])));
+                Assert.That(benchLabel.rectTransform.anchoredPosition.x, Is.EqualTo(50f).Within(0.001f));
+                Assert.That(countLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-50f).Within(0.001f));
+                Assert.That(benchLabel.rectTransform.anchorMin, Is.EqualTo(new Vector2(0f, 0.5f)));
+                Assert.That(benchLabel.rectTransform.anchorMax, Is.EqualTo(new Vector2(0f, 0.5f)));
+                Assert.That(benchLabel.rectTransform.pivot, Is.EqualTo(new Vector2(0f, 0.5f)));
+                Assert.That(countLabel.rectTransform.anchorMin, Is.EqualTo(new Vector2(1f, 0.5f)));
+                Assert.That(countLabel.rectTransform.anchorMax, Is.EqualTo(new Vector2(1f, 0.5f)));
+                Assert.That(countLabel.rectTransform.pivot, Is.EqualTo(new Vector2(1f, 0.5f)));
             }
             finally
             {
@@ -508,11 +513,13 @@ namespace SquareFlow.Tests
                 AssertReadableAutosizedText(levelLabel, 55f);
                 AssertReadableAutosizedText(boardLabel, 55f);
                 AssertReadableAutosizedText(levelValue, 80f);
-                AssertReadableAutosizedText(boardValue, 80f);
+                Assert.That(boardValue.enableAutoSizing, Is.True);
+                Assert.That(boardValue.fontSizeMin, Is.EqualTo(50f).Within(0.001f));
+                Assert.That(boardValue.fontSizeMax, Is.EqualTo(160f).Within(0.001f));
                 Assert.That(levelLabel.rectTransform.sizeDelta, Is.EqualTo(new Vector2(360f, 68f)));
                 Assert.That(boardLabel.rectTransform.sizeDelta, Is.EqualTo(new Vector2(360f, 68f)));
                 Assert.That(levelValue.rectTransform.sizeDelta, Is.EqualTo(new Vector2(360f, 95f)));
-                Assert.That(boardValue.rectTransform.sizeDelta, Is.EqualTo(new Vector2(360f, 95f)));
+                Assert.That(boardValue.rectTransform.sizeDelta, Is.EqualTo(new Vector2(300f, 95f)));
                 Assert.That(TopEdge(levelLabel.rectTransform), Is.LessThanOrEqualTo(74f));
                 Assert.That(TopEdge(boardLabel.rectTransform), Is.LessThanOrEqualTo(74f));
                 Assert.That(BottomEdge(levelValue.rectTransform), Is.GreaterThanOrEqualTo(-77f));
@@ -717,8 +724,8 @@ namespace SquareFlow.Tests
                 AssertPanelImage(bestCard);
                 Assert.That(FindText(scoreCard, "SCORE"), Is.Not.Null);
                 Assert.That(FindText(bestCard, "BEST"), Is.Not.Null);
-                AssertHeaderIcon(scoreCard, "FlowGem");
-                AssertHeaderIcon(bestCard, "FlowCrown");
+                AssertHeaderIcon(scoreCard, "FlowGem", new Vector2(-90f, 0f), new Vector2(102.5f, 82.5f));
+                AssertHeaderIcon(bestCard, "FlowCrown", new Vector2(-90f, 0f), new Vector2(90.2f, 72.6f));
                 AssertPanelImage(header.Find("LevelBadge"));
                 Assert.That(FindText(header.Find("LevelBadge"), "LEVEL"), Is.Not.Null);
                 Assert.That(FindText(scoreCard, "0"), Is.Not.Null);
@@ -731,7 +738,6 @@ namespace SquareFlow.Tests
                 Assert.That(hudActions, Is.Not.Null);
                 Assert.That(hudActions.Find("HomeButton").GetComponent<Button>(), Is.Not.Null);
                 Assert.That(hudActions.Find("RestartButton").GetComponent<Button>(), Is.Not.Null);
-                Assert.That(hudActions.Find("PaletteButton").GetComponent<Button>(), Is.Not.Null);
                 Assert.That(hudActions.Find("MuteButton").GetComponent<Button>(), Is.Not.Null);
 
                 Transform orbiterStrip = canvas.Find("OrbiterStrip");
@@ -764,15 +770,16 @@ namespace SquareFlow.Tests
                 Assert.That(orbiterLabel.fontSize * orbiterLabel.rectTransform.localScale.x, Is.EqualTo(moves.fontSize).Within(0.001f));
                 AssertTextOutlineDarkerThanFill(orbiterLabel);
                 Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.5f).Within(0.001f));
-                Assert.That(orbiterLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-350f));
+                Assert.That(orbiterLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-240f));
                 TMP_Text orbiterCount = FindText(strip, "0/5");
                 Assert.That(orbiterCount, Is.Not.Null);
                 Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.5f).Within(0.001f));
+                Assert.That(orbiterCount.rectTransform.anchoredPosition.x, Is.EqualTo(285f));
                 RectTransform[] orbiterDots = NamedChildren(strip, "OrbiterDot");
                 Assert.That(orbiterDots.Length, Is.EqualTo(SquareFlowConstants.MaxActiveOrbiters));
-                Assert.That(orbiterDots[0].anchoredPosition.x, Is.EqualTo(-138f));
-                Assert.That(orbiterDots[2].anchoredPosition.x, Is.EqualTo(0f).Within(0.001f));
-                Assert.That(orbiterDots[1].anchoredPosition.x - orbiterDots[0].anchoredPosition.x, Is.EqualTo(69f).Within(0.001f));
+                Assert.That(orbiterDots[0].anchoredPosition.x, Is.EqualTo(-70f));
+                Assert.That(orbiterDots[2].anchoredPosition.x, Is.EqualTo(40f).Within(0.001f));
+                Assert.That(orbiterDots[1].anchoredPosition.x - orbiterDots[0].anchoredPosition.x, Is.EqualTo(55f).Within(0.001f));
                 Assert.That(orbiterDots[0].localScale.x, Is.EqualTo(2.94f).Within(0.001f));
                 Assert.That(RightEdge(orbiterLabel.rectTransform), Is.LessThan(LeftEdge(orbiterDots[0])));
                 Assert.That(RightEdge(orbiterDots[orbiterDots.Length - 1]), Is.LessThan(LeftEdge(orbiterCount.rectTransform)));
@@ -780,27 +787,38 @@ namespace SquareFlow.Tests
                 Transform waiting = canvas.Find("WaitingQueue");
                 Assert.That(waiting, Is.Not.Null);
                 AssertPanelImage(waiting);
+                Assert.That(waiting.GetComponent<Image>().color.a, Is.EqualTo(100f / 255f).Within(0.001f));
                 RectTransform waitingRect = waiting.GetComponent<RectTransform>();
-                Assert.That(waitingRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
-                Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
-                Assert.That(waitingRect.sizeDelta, Is.EqualTo(new Vector2(-80f, 164f)));
-                Assert.That(waitingRect.offsetMin.x, Is.EqualTo(40f));
-                Assert.That(waitingRect.offsetMax.x, Is.EqualTo(-40f));
+                Assert.That(waitingRect.anchorMin, Is.EqualTo(new Vector2(0f, 0.5f)));
+                Assert.That(waitingRect.anchorMax, Is.EqualTo(new Vector2(1f, 0.5f)));
+                Assert.That(waitingRect.pivot, Is.EqualTo(new Vector2(0.5f, 0.5f)));
+                Assert.That(waitingRect.anchoredPosition, Is.EqualTo(new Vector2(0f, -336f)));
+                Assert.That(waitingRect.sizeDelta, Is.EqualTo(new Vector2(-160f, 80f)));
+                Assert.That(waitingRect.offsetMin, Is.EqualTo(new Vector2(80f, -376f)));
+                Assert.That(waitingRect.offsetMax, Is.EqualTo(new Vector2(-80f, -296f)));
+                Assert.That(waitingRect.localPosition.z, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(waitingRect.localEulerAngles, Is.EqualTo(Vector3.zero));
+                Assert.That(waitingRect.localScale, Is.EqualTo(Vector3.one));
 
                 RectTransform[] waitingSlots = NamedChildren(waiting, "WaitingSlot");
                 Assert.That(waitingSlots.Length, Is.EqualTo(SquareFlowConstants.WaitQueueLimit));
-                Assert.That(waitingSlots[0].sizeDelta, Is.EqualTo(Vector2.one * 112f));
+                Assert.That(waitingSlots[0].sizeDelta, Is.EqualTo(Vector2.one * 80f));
                 Assert.That(waitingSlots[0].localScale, Is.EqualTo(Vector3.one));
+                Assert.That(waitingSlots[0].GetComponent<Image>().color.a, Is.EqualTo(1f).Within(0.001f));
                 TMP_Text waitingLabel = FindText(waiting, "BENCH");
                 Assert.That(waitingLabel, Is.Not.Null);
                 AssertReadableAutosizedText(waitingLabel, 24f);
                 TMP_Text waitingCount = FindText(waiting, "0/5");
                 Assert.That(waitingCount, Is.Not.Null);
                 AssertReadableAutosizedText(waitingCount, 31f);
-                Assert.That(waitingLabel.rectTransform.anchoredPosition.x, Is.EqualTo(-380f).Within(0.001f));
-                Assert.That(waitingCount.rectTransform.anchoredPosition.x, Is.EqualTo(375f).Within(0.001f));
-                Assert.That(RightEdge(waitingLabel.rectTransform), Is.LessThan(LeftEdge(waitingSlots[0])));
-                Assert.That(LeftEdge(waitingCount.rectTransform), Is.GreaterThan(RightEdge(waitingSlots[waitingSlots.Length - 1])));
+                Assert.That(waitingLabel.rectTransform.anchoredPosition.x, Is.EqualTo(50f).Within(0.001f));
+                Assert.That(waitingCount.rectTransform.anchoredPosition.x, Is.EqualTo(-50f).Within(0.001f));
+                Assert.That(waitingLabel.rectTransform.anchorMin, Is.EqualTo(new Vector2(0f, 0.5f)));
+                Assert.That(waitingLabel.rectTransform.anchorMax, Is.EqualTo(new Vector2(0f, 0.5f)));
+                Assert.That(waitingLabel.rectTransform.pivot, Is.EqualTo(new Vector2(0f, 0.5f)));
+                Assert.That(waitingCount.rectTransform.anchorMin, Is.EqualTo(new Vector2(1f, 0.5f)));
+                Assert.That(waitingCount.rectTransform.anchorMax, Is.EqualTo(new Vector2(1f, 0.5f)));
+                Assert.That(waitingCount.rectTransform.pivot, Is.EqualTo(new Vector2(1f, 0.5f)));
                 Assert.That(waitingLabel.rectTransform.anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
                 Assert.That(waitingCount.rectTransform.anchoredPosition.y, Is.EqualTo(0f).Within(0.001f));
                 AssertAllTextsUseReadableAutosizing(canvas);
@@ -818,14 +836,28 @@ namespace SquareFlow.Tests
                 RectTransform columnsRect = columns.GetComponent<RectTransform>();
                 Assert.That(columnsRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
                 Assert.That(columnsRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
+                Assert.That(columnsRect.pivot, Is.EqualTo(new Vector2(0.5f, 0.5f)));
+                Assert.That(columnsRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 70f)));
+                Assert.That(columnsRect.offsetMin, Is.EqualTo(new Vector2(40f, -170f)));
+                Assert.That(columnsRect.offsetMax, Is.EqualTo(new Vector2(-40f, 310f)));
+                Assert.That(columnsRect.localPosition.z, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(columnsRect.localEulerAngles, Is.EqualTo(Vector3.zero));
+                Assert.That(columnsRect.localScale, Is.EqualTo(Vector3.one));
                 Assert.That(columnsRect.sizeDelta, Is.EqualTo(new Vector2(-80f, 480f)));
                 RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
                 Assert.That(cards.Length, Is.EqualTo(3));
-                Assert.That(cards[0].sizeDelta, Is.EqualTo(new Vector2(288f, 468f)));
+                Assert.That(cards[0].sizeDelta, Is.EqualTo(new Vector2(288f, 500f)));
                 for (int i = 0; i < cards.Length; i++)
+                {
+                    Assert.That(cards[i].anchoredPosition.y, Is.EqualTo(240f).Within(0.001f));
                     AssertPanelImage(cards[i]);
+                    Assert.That(cards[i].GetComponent<Image>().color.a, Is.EqualTo(100f / 255f).Within(0.001f));
+                }
                 Assert.That(LeftEdge(cards[1]) - RightEdge(cards[0]), Is.GreaterThanOrEqualTo(60f));
                 Assert.That(LeftEdge(cards[2]) - RightEdge(cards[1]), Is.GreaterThanOrEqualTo(60f));
+                float cardTopInCanvas = -960f + columnsRect.anchoredPosition.y + cards[0].anchoredPosition.y + cards[0].sizeDelta.y * 0.5f;
+                float queueBottomInCanvas = waitingRect.anchoredPosition.y - waitingRect.sizeDelta.y * 0.5f;
+                Assert.That(cardTopInCanvas, Is.LessThanOrEqualTo(queueBottomInCanvas - 23.999f));
 
                 RectTransform firstDockSlot = cards[0].Find("DockSlotFront").GetComponent<RectTransform>();
                 Assert.That(firstDockSlot.sizeDelta, Is.EqualTo(Vector2.one * 112f));
@@ -899,7 +931,7 @@ namespace SquareFlow.Tests
                     new Vector2(-470f, -52f),
                     new Vector2(-170f, 52f));
                 AssertGuiProPanel(header.Find("ScoreCard"));
-                AssertHeaderIcon(header.Find("ScoreCard"), "FlowGem");
+                AssertHeaderIcon(header.Find("ScoreCard"), "FlowGem", new Vector2(-90f, 0f), new Vector2(102.5f, 82.5f));
                 AssertRectTransformLayout(
                     header.Find("BestCard"),
                     new Vector2(0.5f, 0.5f),
@@ -908,7 +940,7 @@ namespace SquareFlow.Tests
                     new Vector2(-150f, -52f),
                     new Vector2(150f, 52f));
                 AssertGuiProPanel(header.Find("BestCard"));
-                AssertHeaderIcon(header.Find("BestCard"), "FlowCrown");
+                AssertHeaderIcon(header.Find("BestCard"), "FlowCrown", new Vector2(-90f, 0f), new Vector2(90.2f, 72.6f));
                 AssertRectTransformLayout(
                     header.Find("LevelBadge"),
                     new Vector2(0.5f, 0.5f),
@@ -921,24 +953,24 @@ namespace SquareFlow.Tests
                 AssertNoShapeNameText(header);
                 AssertGuiProPanel(status);
                 AssertGuiProPanel(orbiterStrip);
-                AssertGuiProPanel(waiting);
+                AssertGuiProPanel(waiting, "BasicFrame_Round20", 100f / 255f);
 
                 AssertRectTransformLayout(
                     orbiterStrip,
                     new Vector2(0f, 1f),
                     new Vector2(1f, 1f),
-                    new Vector2(-80f, 92f),
-                    new Vector2(40f, -328f),
-                    new Vector2(-40f, -236f));
+                    new Vector2(-160f, 92f),
+                    new Vector2(80f, -328f),
+                    new Vector2(-80f, -236f));
 
                 RectTransform statusRect = status.GetComponent<RectTransform>();
                 AssertRectTransformLayout(
                     status,
                     new Vector2(0f, 1f),
                     new Vector2(1f, 1f),
-                    new Vector2(-80f, 86f),
-                    new Vector2(40f, -222f),
-                    new Vector2(-40f, -136f));
+                    new Vector2(-160f, 86f),
+                    new Vector2(80f, -222f),
+                    new Vector2(-80f, -136f));
                 Assert.That(statusRect.sizeDelta.y, Is.EqualTo(86f));
                 Assert.That(statusRect.anchoredPosition.y, Is.EqualTo(-136f));
 
@@ -948,41 +980,33 @@ namespace SquareFlow.Tests
                     hudActions,
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
-                    new Vector2(360f, 76f),
-                    new Vector2(120f, -38f),
-                    new Vector2(480f, 38f));
-                Assert.That(hudActions.GetComponentsInChildren<Button>().Length, Is.EqualTo(4));
+                    new Vector2(276f, 76f),
+                    new Vector2(42f, -38f),
+                    new Vector2(318f, 38f));
+                Assert.That(hudActions.GetComponentsInChildren<Button>().Length, Is.EqualTo(3));
                 AssertRectTransformLayout(
                     hudActions.Find("HomeButton"),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(78f, 78f),
-                    new Vector2(-165f, -39f),
-                    new Vector2(-87f, 39f));
+                    new Vector2(-123f, -39f),
+                    new Vector2(-45f, 39f));
                 AssertGuiProIconButton(hudActions.Find("HomeButton"), "FlowHomeButton");
                 AssertRectTransformLayout(
                     hudActions.Find("RestartButton"),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(78f, 78f),
-                    new Vector2(-81f, -39f),
-                    new Vector2(-3f, 39f));
+                    new Vector2(-39f, -39f),
+                    new Vector2(39f, 39f));
                 AssertGuiProIconButton(hudActions.Find("RestartButton"), "FlowRestartButton");
-                AssertRectTransformLayout(
-                    hudActions.Find("PaletteButton"),
-                    new Vector2(0.5f, 0.5f),
-                    new Vector2(0.5f, 0.5f),
-                    new Vector2(78f, 78f),
-                    new Vector2(3f, -39f),
-                    new Vector2(81f, 39f));
-                AssertGuiProIconButton(hudActions.Find("PaletteButton"), "FlowPaletteButton");
                 AssertRectTransformLayout(
                     hudActions.Find("MuteButton"),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(78f, 78f),
-                    new Vector2(87f, -39f),
-                    new Vector2(165f, 39f));
+                    new Vector2(45f, -39f),
+                    new Vector2(123f, 39f));
                 AssertGuiProIconButton(hudActions.Find("MuteButton"), "FlowMuteButton");
 
                 AssertAllGuiProFonts(header);
@@ -992,19 +1016,23 @@ namespace SquareFlow.Tests
 
                 AssertRectTransformLayout(
                     waiting,
-                    new Vector2(0f, 0f),
-                    new Vector2(1f, 0f),
-                    new Vector2(-80f, 164f),
-                    new Vector2(40f, 500f),
-                    new Vector2(-40f, 664f));
+                    new Vector2(0f, 0.5f),
+                    new Vector2(1f, 0.5f),
+                    new Vector2(-160f, 80f),
+                    new Vector2(80f, -376f),
+                    new Vector2(-80f, -296f));
+                Assert.That(waiting.GetComponent<RectTransform>().pivot, Is.EqualTo(new Vector2(0.5f, 0.5f)));
+                Assert.That(waiting.GetComponent<RectTransform>().anchoredPosition, Is.EqualTo(new Vector2(0f, -336f)));
 
                 AssertRectTransformLayout(
                     columns,
                     new Vector2(0f, 0f),
                     new Vector2(1f, 0f),
                     new Vector2(-80f, 480f),
-                    new Vector2(40f, 12f),
-                    new Vector2(-40f, 492f));
+                    new Vector2(40f, -170f),
+                    new Vector2(-40f, 310f));
+                Assert.That(columns.GetComponent<RectTransform>().pivot, Is.EqualTo(new Vector2(0.5f, 0.5f)));
+                Assert.That(columns.GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(70f).Within(0.001f));
 
                 RectTransform[] cards = NamedChildren(columns, "ShooterColumnCard");
                 Assert.That(cards.Length, Is.EqualTo(3));
@@ -1014,11 +1042,11 @@ namespace SquareFlow.Tests
                         cards[i],
                         new Vector2(0.5f, 0.5f),
                         new Vector2(0.5f, 0.5f),
-                        new Vector2(288f, 468f),
-                        new Vector2(-496f + i * 352f, -234f),
-                        new Vector2(-208f + i * 352f, 234f));
-                    Assert.That(cards[i].anchoredPosition, Is.EqualTo(new Vector2(-352f + i * 352f, 0f)));
-                    AssertGuiProPanel(cards[i]);
+                        new Vector2(288f, 500f),
+                        new Vector2(-496f + i * 352f, -10f),
+                        new Vector2(-208f + i * 352f, 490f));
+                    Assert.That(cards[i].anchoredPosition, Is.EqualTo(new Vector2(-352f + i * 352f, 240f)));
+                    AssertGuiProPanel(cards[i], "BasicFrame_Round20", 100f / 255f);
                     AssertAllGuiProFonts(cards[i]);
                 }
 
@@ -1122,7 +1150,7 @@ namespace SquareFlow.Tests
                 Assert.That(FindText(parent, shape.Name), Is.Null, shape.Name + " should not render in the gameplay HUD.");
         }
 
-        private static void AssertGuiProPanel(Transform transform, string expectedTextureName = "BasicFrame_Round20")
+        private static void AssertGuiProPanel(Transform transform, string expectedTextureName = "BasicFrame_Round20", float expectedAlpha = 1f)
         {
             Assert.That(transform, Is.Not.Null);
             Image image = transform.GetComponent<Image>();
@@ -1130,7 +1158,10 @@ namespace SquareFlow.Tests
             Assert.That(image.sprite, Is.Not.Null);
             Assert.That(image.sprite.texture.name, Is.EqualTo(expectedTextureName));
             Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
-            Assert.That(image.color, Is.EqualTo(Color.white));
+            Assert.That(image.color.r, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(image.color.g, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(image.color.b, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(image.color.a, Is.EqualTo(expectedAlpha).Within(0.001f));
             Assert.That(image.pixelsPerUnitMultiplier, Is.EqualTo(0.25f).Within(0.001f));
             AssertSoftPanelShadow(transform);
         }
@@ -1207,10 +1238,24 @@ namespace SquareFlow.Tests
             Assert.That(rect.offsetMax, Is.EqualTo(offsetMax));
         }
 
-        private static void AssertHeaderIcon(Transform card, string expectedTextureName)
+        private static void AssertHeaderIcon(Transform card, string expectedTextureName, Vector2? expectedPosition = null, Vector2? expectedSize = null)
         {
             Transform icon = card.Find("HeaderIcon");
             Assert.That(icon, Is.Not.Null);
+            RectTransform rect = icon.GetComponent<RectTransform>();
+            Assert.That(rect, Is.Not.Null);
+            if (expectedPosition.HasValue)
+            {
+                Assert.That(rect.anchoredPosition.x, Is.EqualTo(expectedPosition.Value.x).Within(0.001f));
+                Assert.That(rect.anchoredPosition.y, Is.EqualTo(expectedPosition.Value.y).Within(0.001f));
+            }
+
+            if (expectedSize.HasValue)
+            {
+                Assert.That(rect.sizeDelta.x, Is.EqualTo(expectedSize.Value.x).Within(0.001f));
+                Assert.That(rect.sizeDelta.y, Is.EqualTo(expectedSize.Value.y).Within(0.001f));
+            }
+
             Image image = icon.GetComponent<Image>();
             Assert.That(image, Is.Not.Null);
             Assert.That(image.sprite, Is.Not.Null);
@@ -1461,8 +1506,10 @@ namespace SquareFlow.Tests
             Rect statusBar = TopBand(canvasSize.y, safeTop + layout.StatusBarTopOffset, layout.StatusBarSize.y);
             Rect orbiterStrip = TopBand(canvasSize.y, safeTop + layout.OrbiterStripTopOffset, layout.OrbiterStripSize.y);
             Rect boardBand = CenterBand(layout.BoardPanelPosition.y, layout.BoardPanelSize.y);
-            Rect waiting = BottomBand(canvasSize.y, safeBottom + layout.QueueBottomOffset, layout.QueueSize.y);
-            Rect dock = BottomBand(canvasSize.y, safeBottom + layout.DockBottomOffset, layout.DockSize.y);
+            float canvasBottom = canvasSize.y * -0.5f;
+            float columnsY = safeBottom + 70f;
+            Rect waiting = CenterBand(canvasBottom + columnsY + 240f + 250f + 24f + 40f, 80f);
+            Rect dock = CenterBand(canvasBottom + columnsY + 240f, 500f);
 
             Assert.That(orbiterStrip.yMax, Is.LessThanOrEqualTo(statusBar.yMin - requiredGap), deviceName + " status/orbiter overlap");
             Assert.That(boardBand.yMax, Is.LessThanOrEqualTo(orbiterStrip.yMin - requiredGap), deviceName + " orbiter/board overlap");

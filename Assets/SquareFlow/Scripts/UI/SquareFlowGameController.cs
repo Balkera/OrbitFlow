@@ -20,17 +20,25 @@ namespace SquareFlow.UI
         private const float ReferenceCanvasHeight = 1920f;
         private const float ShooterColumnSpacing = 352f;
         private const float ShooterColumnCardWidth = 288f;
-        private const float ShooterColumnCardHeight = 468f;
+        private const float ShooterColumnCardHeight = 500f;
+        private const float ShooterColumnCardY = 240f;
+        private const float ShooterColumnsRectY = 70f;
+        private const float ShooterColumnsQueueGap = 24f;
         private const float ShooterRowSpacing = 116f;
-        private const float WaitingQueueSpacing = 128f;
+        private const float WaitingQueueSpacing = 86f;
         private const float ResponsiveHorizontalMargin = 40f;
+        private const float HudBarMinimumHorizontalMargin = 80f;
+        private const float HudBarMaximumHorizontalMargin = 180f;
+        private const float HudBarMaximumWidth = 1080f;
         private const float OrbiterStripItemScale = 2.94f;
         private const float OrbiterStripLabelScale = 1.5f;
-        private const float OrbiterStripLabelX = -350f;
-        private const float OrbiterStripFirstDotX = -138f;
-        private const float OrbiterStripDotSpacing = 69f;
-        private const float WaitingQueueSlotSize = 112f;
-        private const float WaitingQueueTokenSize = 112f;
+        private const float OrbiterStripLabelX = -240f;
+        private const float OrbiterStripFirstDotX = -70f;
+        private const float OrbiterStripDotSpacing = 55f;
+        private const float WaitingQueueSlotSize = 80f;
+        private const float WaitingQueueTokenSize = 80f;
+        private const float WaitingQueueRectHeight = 80f;
+        private const float HudPanelAlpha100 = 100f / 255f;
         private const float ShooterDockSlotSize = 112f;
         private const float ShooterDockTokenSize = 112f;
         private const float ReadableTextScale = 2f;
@@ -57,7 +65,6 @@ namespace SquareFlow.UI
         private Sprite gemSprite;
         private Sprite homeButtonSprite;
         private Sprite restartButtonSprite;
-        private Sprite paletteButtonSprite;
         private Sprite muteButtonSprite;
         private TMP_FontAsset guiProFont;
         private Sprite guiProPanelSprite;
@@ -176,7 +183,7 @@ namespace SquareFlow.UI
             ApplyOutline(stats, ColorWithAlpha(theme.Border, 0.58f), 1f);
             AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-220f, -2f), MenuSelectedTextColor());
             AddVerticalDivider(stats, 0f);
-            AddMenuStat(stats, "BOARD", shape.Name, new Vector2(220f, -2f), MenuBoardValueColor());
+            AddMenuStat(stats, "BOARD", shape.Name, new Vector2(220f, -2f), MenuBoardValueColor(), new Vector2(300f, 95f), 50f);
 
             RectTransform selector = AddContainer(content, "LevelSelector", startLayout.LevelSelectorSize);
             ApplyGuiProPanelSkin(selector, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.62f));
@@ -235,49 +242,47 @@ namespace SquareFlow.UI
             RectTransform hud = AddContainer(root, "GameHeader", screen.HudSize);
             SetTopStretch(hud, safeArea.w, screen.HudSize.y, 0f);
             Vector2 headerCardSize = new Vector2(300f, 104f);
-            hudText = AddHeaderStatCard(hud, "ScoreCard", new Vector2(-320f, 0f), headerCardSize, "SCORE", 52, gemSprite);
-            bestText = AddHeaderStatCard(hud, "BestCard", Vector2.zero, headerCardSize, "BEST", 46, crownSprite);
+            hudText = AddHeaderStatCard(hud, "ScoreCard", new Vector2(-320f, 0f), headerCardSize, "SCORE", 52, gemSprite, new Vector2(-90f, 0f), 1.25f);
+            bestText = AddHeaderStatCard(hud, "BestCard", Vector2.zero, headerCardSize, "BEST", 46, crownSprite, new Vector2(-90f, 0f), 1.10f);
 
             RectTransform levelBadge = AddGlassPanel(hud, "LevelBadge", headerCardSize);
             SetAnchored(levelBadge, new Vector2(320f, 0f));
             AddText(levelBadge, "LEVEL", 22, FontStyle.Bold, HeaderLabelColor(), new Vector2(0f, 25f), new Vector2(210f, 30f));
             AddText(levelBadge, state.Level.ToString(CultureInfo.InvariantCulture), 52, FontStyle.Bold, HeaderNumberColor(), new Vector2(0f, -17f), new Vector2(210f, 62f));
 
+            float hudBarMargin = HudBarHorizontalMargin();
             RectTransform status = AddGlassPanel(root, "GameStatusBar", screen.StatusBarSize);
-            SetTopStretch(status, safeArea.w + screen.StatusBarTopOffset, screen.StatusBarSize.y, ResponsiveHorizontalMargin);
-            comboText = AddText(status, string.Empty, 36, FontStyle.Bold, HeaderLabelColor(), new Vector2(-320f, 0f), new Vector2(300f, 50f), TextAnchor.MiddleLeft);
+            SetTopStretch(status, safeArea.w + screen.StatusBarTopOffset, screen.StatusBarSize.y, hudBarMargin);
+            comboText = AddText(status, string.Empty, 36, FontStyle.Bold, HeaderLabelColor(), new Vector2(-245f, 0f), new Vector2(250f, 50f), TextAnchor.MiddleLeft);
 
             RectTransform actions = AddContainer(status, "HudActions", screen.ActionSize);
             SetAnchored(actions, screen.ActionPosition);
             Color headerButton = HeaderButtonColor();
             if (homeButtonSprite != null)
-                AddSpriteButton(actions, "HomeButton", new Vector2(-126f, 0f), Vector2.one * 78f, homeButtonSprite, ShowMenu);
+                AddSpriteButton(actions, "HomeButton", new Vector2(-84f, 0f), Vector2.one * 78f, homeButtonSprite, ShowMenu);
             else
-                AddButton(actions, "Menu", new Vector2(-126f, 0f), new Vector2(78f, 64f), headerButton, Color.white, ShowMenu, 19);
+                AddButton(actions, "Menu", new Vector2(-84f, 0f), new Vector2(78f, 64f), headerButton, Color.white, ShowMenu, 19);
             if (restartButtonSprite != null)
-                AddSpriteButton(actions, "RestartButton", new Vector2(-42f, 0f), Vector2.one * 78f, restartButtonSprite, StartLevel);
+                AddSpriteButton(actions, "RestartButton", Vector2.zero, Vector2.one * 78f, restartButtonSprite, StartLevel);
             else
-                AddButton(actions, "R", new Vector2(-42f, 0f), screen.UtilityButtonSize, headerButton, Color.white, StartLevel, 22);
-            if (paletteButtonSprite != null)
-                AddSpriteButton(actions, "PaletteButton", new Vector2(42f, 0f), Vector2.one * 78f, paletteButtonSprite, ToggleThemeInGame);
-            else
-                AddButton(actions, "T", new Vector2(42f, 0f), screen.UtilityButtonSize, headerButton, Color.white, ToggleThemeInGame, 22);
+                AddButton(actions, "R", Vector2.zero, screen.UtilityButtonSize, headerButton, Color.white, StartLevel, 22);
             if (muteButtonSprite != null)
-                AddSpriteButton(actions, "MuteButton", new Vector2(126f, 0f), Vector2.one * 78f, muteButtonSprite, ToggleMuteInGame);
+                AddSpriteButton(actions, "MuteButton", new Vector2(84f, 0f), Vector2.one * 78f, muteButtonSprite, ToggleMuteInGame);
             else
-                AddButton(actions, "M", new Vector2(126f, 0f), screen.UtilityButtonSize, headerButton, Color.white, ToggleMuteInGame, 22);
+                AddButton(actions, "M", new Vector2(84f, 0f), screen.UtilityButtonSize, headerButton, Color.white, ToggleMuteInGame, 22);
 
             RenderOrbiterStrip(screen);
             RenderBoardFrame(screen);
 
             RefreshWorldGameplay();
 
-            RectTransform queue = AddGlassPanel(root, "WaitingQueue", screen.QueueSize);
-            SetBottomStretch(queue, safeArea.y + screen.QueueBottomOffset, screen.QueueSize.y, ResponsiveHorizontalMargin);
+            RectTransform queue = AddGlassPanel(root, "WaitingQueue", new Vector2(screen.QueueSize.x, WaitingQueueRectHeight));
+            SetImageAlpha(queue, HudPanelAlpha100);
+            SetMiddleStretch(queue, WaitingQueueY(safeArea), WaitingQueueRectHeight, hudBarMargin);
             RenderWaiting(queue);
 
             RectTransform columns = AddContainer(root, "ShooterColumns", screen.DockSize);
-            SetBottomStretch(columns, safeArea.y + screen.DockBottomOffset, screen.DockSize.y, ResponsiveHorizontalMargin);
+            SetBottomCenterStretch(columns, ShooterColumnsY(safeArea), screen.DockSize.y, ResponsiveHorizontalMargin);
             RenderColumns(columns);
 
             UpdateHudTexts();
@@ -301,9 +306,10 @@ namespace SquareFlow.UI
         private void RenderOrbiterStrip(SquareFlowGameplayScreenLayout screen)
         {
             Vector4 safeArea = CurrentSafeAreaPadding();
+            float hudBarMargin = HudBarHorizontalMargin();
             RectTransform strip = AddGlassPanel(root, "OrbiterStrip", screen.OrbiterStripSize);
-            SetTopStretch(strip, safeArea.w + screen.OrbiterStripTopOffset, screen.OrbiterStripSize.y, ResponsiveHorizontalMargin);
-            TMP_Text label = AddText(strip, "ORBITERS", 24, FontStyle.Bold, HeaderLabelColor(), new Vector2(OrbiterStripLabelX, -1f), new Vector2(180f, 40f), TextAnchor.MiddleLeft);
+            SetTopStretch(strip, safeArea.w + screen.OrbiterStripTopOffset, screen.OrbiterStripSize.y, hudBarMargin);
+            TMP_Text label = AddText(strip, "ORBITERS", 24, FontStyle.Bold, HeaderLabelColor(), new Vector2(OrbiterStripLabelX, -1f), new Vector2(160f, 40f), TextAnchor.MiddleLeft);
             SetUniformScale(label.rectTransform, OrbiterStripLabelScale);
 
             int active = state != null ? state.ActiveOrbiters.Count : 0;
@@ -316,7 +322,7 @@ namespace SquareFlow.UI
                 ApplyOutline(dot, ColorWithAlpha(Color.white, 0.68f), 1f);
             }
 
-            TMP_Text count = AddText(strip, active.ToString(CultureInfo.InvariantCulture) + "/" + SquareFlowConstants.MaxActiveOrbiters, 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(385f, -1f), new Vector2(90f, 30f), TextAnchor.MiddleRight);
+            TMP_Text count = AddText(strip, active.ToString(CultureInfo.InvariantCulture) + "/" + SquareFlowConstants.MaxActiveOrbiters, 18, FontStyle.Bold, HeaderLabelColor(), new Vector2(285f, -1f), new Vector2(90f, 30f), TextAnchor.MiddleRight);
             SetUniformScale(count.rectTransform, OrbiterStripLabelScale);
         }
 
@@ -375,13 +381,14 @@ namespace SquareFlow.UI
         {
             int capacity = SquareFlowConstants.WaitQueueLimit;
             float startX = WaitingQueueStartX(capacity);
-            AddText(queue, "BENCH", 24, FontStyle.Bold, HeaderLabelColor(), new Vector2(-380f, 0f), new Vector2(190f, 70f), TextAnchor.MiddleLeft);
-            AddText(queue, state.WaitingQueue.Count.ToString(CultureInfo.InvariantCulture) + "/" + capacity, 31, FontStyle.Bold, HeaderLabelColor(), new Vector2(375f, 0f), new Vector2(170f, 70f), TextAnchor.MiddleRight);
+            float textInset = WaitingQueueTextInset();
+            AddEdgeText(queue, "BENCH", 24, FontStyle.Bold, HeaderLabelColor(), textInset, new Vector2(130f, 70f), true);
+            AddEdgeText(queue, state.WaitingQueue.Count.ToString(CultureInfo.InvariantCulture) + "/" + capacity, 31, FontStyle.Bold, HeaderLabelColor(), textInset, new Vector2(130f, 70f), false);
 
             for (int i = 0; i < capacity; i++)
             {
                 Vector2 position = new Vector2(startX + i * WaitingQueueSpacing, 0f);
-                RectTransform slot = AddPanel(queue, "WaitingSlot", Vector2.one * WaitingQueueSlotSize, ColorWithAlpha(theme.InactiveSlot, 0.62f), circleSprite);
+                RectTransform slot = AddPanel(queue, "WaitingSlot", Vector2.one * WaitingQueueSlotSize, ColorWithAlpha(theme.InactiveSlot, 1f), circleSprite);
                 SetAnchored(slot, position);
                 ApplyOutline(slot, ColorWithAlpha(Color.white, 0.66f), 1f);
             }
@@ -407,7 +414,8 @@ namespace SquareFlow.UI
                 float x = startX + i * ShooterColumnSpacing;
                 List<Shooter> shooterColumn = state.ShooterColumns[i];
                 RectTransform card = AddGlassPanel(columns, "ShooterColumnCard", new Vector2(ShooterColumnCardWidth, ShooterColumnCardHeight));
-                SetAnchored(card, new Vector2(x, 0f));
+                SetImageAlpha(card, HudPanelAlpha100);
+                SetAnchored(card, new Vector2(x, ShooterColumnCardY));
                 AddText(card, ((char)('A' + i)).ToString(), 52, FontStyle.Bold, HeaderLabelColor(), new Vector2(-104f, 196f), new Vector2(96f, 72f));
 
                 for (int row = 0; row < visibleRows; row++)
@@ -476,22 +484,23 @@ namespace SquareFlow.UI
         private void RegisterColumnLaunch(string orbiterId, int column)
         {
             if (string.IsNullOrEmpty(orbiterId) || orbiterWorldView == null || layout == null || state == null) return;
-            SquareFlowGameplayScreenLayout screen = CreateGameplayScreenLayout(CurrentSafeAreaPadding());
+            Vector4 safeArea = CurrentSafeAreaPadding();
+            float canvasBottom = CurrentCanvasSize().y * -0.5f;
             Vector2 columnOffset = new Vector2(
                 ShooterColumnsStartX(state.ShooterColumns.Length) + column * ShooterColumnSpacing,
-                ShooterColumnsStartY(screen.DockVisibleRows));
-            Vector2 referencePosition = screen.DockPosition + columnOffset;
+                ShooterColumnsY(safeArea) + ShooterColumnCardY + ShooterColumnsStartY(SquareFlowGameplayScreenLayout.ShooterColumnVisibleRows));
+            Vector2 referencePosition = new Vector2(columnOffset.x, canvasBottom + columnOffset.y);
             orbiterWorldView.RegisterLaunchSource(orbiterId, ReferenceCanvasToWorld(referencePosition));
         }
 
         private void RegisterWaitingLaunch(string orbiterId, int index)
         {
             if (string.IsNullOrEmpty(orbiterId) || orbiterWorldView == null || layout == null) return;
-            SquareFlowGameplayScreenLayout screen = CreateGameplayScreenLayout(CurrentSafeAreaPadding());
+            Vector4 safeArea = CurrentSafeAreaPadding();
             Vector2 queueOffset = new Vector2(
                 WaitingQueueStartX(SquareFlowConstants.WaitQueueLimit) + index * WaitingQueueSpacing,
                 0f);
-            Vector2 referencePosition = screen.QueuePosition + queueOffset;
+            Vector2 referencePosition = new Vector2(queueOffset.x, WaitingQueueY(safeArea) + queueOffset.y);
             orbiterWorldView.RegisterLaunchSource(orbiterId, ReferenceCanvasToWorld(referencePosition));
         }
 
@@ -516,6 +525,18 @@ namespace SquareFlow.UI
             return root.rect.size;
         }
 
+        private float HudBarHorizontalMargin()
+        {
+            float canvasWidth = CurrentCanvasSize().x;
+            float margin = (canvasWidth - HudBarMaximumWidth) * 0.5f;
+            return Mathf.Clamp(margin, HudBarMinimumHorizontalMargin, HudBarMaximumHorizontalMargin);
+        }
+
+        private float WaitingQueueTextInset()
+        {
+            return HudBarHorizontalMargin() - 30f;
+        }
+
         private float CurrentLayoutCanvasHeight()
         {
             return root != null && root.rect.height > 0f ? root.rect.height : 0f;
@@ -529,6 +550,22 @@ namespace SquareFlow.UI
         private static float ShooterColumnsStartY(int visibleRows)
         {
             return (visibleRows - 1) * ShooterRowSpacing * 0.5f;
+        }
+
+        private static float ShooterColumnsY(Vector4 safeArea)
+        {
+            return safeArea.y + ShooterColumnsRectY;
+        }
+
+        private float WaitingQueueY(Vector4 safeArea)
+        {
+            float canvasBottom = CurrentCanvasSize().y * -0.5f;
+            return canvasBottom
+                + ShooterColumnsY(safeArea)
+                + ShooterColumnCardY
+                + ShooterColumnCardHeight * 0.5f
+                + ShooterColumnsQueueGap
+                + WaitingQueueRectHeight * 0.5f;
         }
 
         private static float WaitingQueueStartY(int capacity)
@@ -579,10 +616,12 @@ namespace SquareFlow.UI
             return "Out of Shooters";
         }
 
-        private void AddMenuStat(RectTransform parent, string label, string value, Vector2 position, Color valueColor)
+        private void AddMenuStat(RectTransform parent, string label, string value, Vector2 position, Color valueColor, Vector2? valueDimensions = null, float? valueAutoSizeMin = null)
         {
             AddText(parent, label, 55, FontStyle.Bold, MenuStatsLabelColor(), position + new Vector2(0f, 40f), new Vector2(360f, 68f));
-            AddText(parent, value, 80, FontStyle.Bold, valueColor, position + new Vector2(0f, -30f), new Vector2(360f, 95f));
+            TMP_Text valueText = AddText(parent, value, 80, FontStyle.Bold, valueColor, position + new Vector2(0f, -30f), valueDimensions ?? new Vector2(360f, 95f));
+            if (valueAutoSizeMin.HasValue)
+                valueText.fontSizeMin = valueAutoSizeMin.Value;
         }
 
         private void ApplyMenuContentTextOutline(RectTransform content)
@@ -741,15 +780,6 @@ namespace SquareFlow.UI
             return theme.Score;
         }
 
-        private void ToggleThemeInGame()
-        {
-            saveData.DarkMode = !saveData.DarkMode;
-            theme = new SquareFlowTheme(saveData.DarkMode);
-            if (mobileCamera != null)
-                mobileCamera.Configure(theme.Background);
-            RefreshGameView();
-        }
-
         private void ToggleMuteInGame()
         {
             saveData.Muted = !saveData.Muted;
@@ -902,7 +932,7 @@ namespace SquareFlow.UI
             worldBackground.transform.localScale = Vector3.one * coverScale;
         }
 
-        private TMP_Text AddHeaderStatCard(RectTransform parent, string objectName, Vector2 position, Vector2 size, string label, int valueFontSize, Sprite icon)
+        private TMP_Text AddHeaderStatCard(RectTransform parent, string objectName, Vector2 position, Vector2 size, string label, int valueFontSize, Sprite icon, Vector2? iconPosition = null, float iconScale = 1f)
         {
             RectTransform card = AddGlassPanel(parent, objectName, size);
             SetAnchored(card, position);
@@ -911,7 +941,7 @@ namespace SquareFlow.UI
             float textWidth = size.x - 116f;
             if (icon != null)
             {
-                AddHeaderIcon(card, "HeaderIcon", icon, new Vector2(-104f, -2f), new Vector2(82f, 66f));
+                AddHeaderIcon(card, "HeaderIcon", icon, iconPosition ?? new Vector2(-104f, -2f), new Vector2(82f, 66f) * iconScale);
                 contentOffset = 54f;
                 textWidth = size.x - 140f;
             }
@@ -982,6 +1012,16 @@ namespace SquareFlow.UI
                 image.raycastTarget = enabled;
         }
 
+        private static void SetImageAlpha(RectTransform rect, float alpha)
+        {
+            Image image = rect != null ? rect.GetComponent<Image>() : null;
+            if (image == null) return;
+
+            Color color = image.color;
+            color.a = alpha;
+            image.color = color;
+        }
+
         private TMP_Text AddText(RectTransform parent, string value, int size, FontStyle style, Color color, Vector2 position, Vector2 dimensions, TextAnchor alignment = TextAnchor.MiddleCenter)
         {
             GameObject go = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -1002,6 +1042,26 @@ namespace SquareFlow.UI
             Shadow shadow = go.AddComponent<Shadow>();
             shadow.effectColor = ColorWithAlpha(Color.black, 0.62f);
             shadow.effectDistance = new Vector2(1.8f, -1.8f);
+            return text;
+        }
+
+        private TMP_Text AddEdgeText(RectTransform parent, string value, int size, FontStyle style, Color color, float inset, Vector2 dimensions, bool leftAligned)
+        {
+            TMP_Text text = AddText(
+                parent,
+                value,
+                size,
+                style,
+                color,
+                Vector2.zero,
+                dimensions,
+                leftAligned ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight);
+            RectTransform rect = text.rectTransform;
+            float anchorX = leftAligned ? 0f : 1f;
+            rect.anchorMin = new Vector2(anchorX, 0.5f);
+            rect.anchorMax = new Vector2(anchorX, 0.5f);
+            rect.pivot = new Vector2(anchorX, 0.5f);
+            rect.anchoredPosition = new Vector2(leftAligned ? inset : -inset, 0f);
             return text;
         }
 
@@ -1314,7 +1374,6 @@ namespace SquareFlow.UI
             gemSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowGem", "FlowGemSprite", 300f);
             homeButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowHomeButton", "FlowHomeButtonSprite", 300f);
             restartButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowRestartButton", "FlowRestartButtonSprite", 300f);
-            paletteButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowPaletteButton", "FlowPaletteButtonSprite", 300f);
             muteButtonSprite = LoadSimpleUiSprite("SquareFlow/UI/FlowMuteButton", "FlowMuteButtonSprite", 300f);
 
             guiProFont = Resources.Load<TMP_FontAsset>("SquareFlow/GUIPro/LilitaOne-Regular SDF");
@@ -1492,6 +1551,34 @@ namespace SquareFlow.UI
             rect.offsetMax = new Vector2(-horizontalMargin, bottom + height);
             rect.anchoredPosition = new Vector2(0f, bottom);
             rect.sizeDelta = new Vector2(-horizontalMargin * 2f, height);
+        }
+
+        private static void SetBottomCenterStretch(RectTransform rect, float y, float height, float horizontalMargin)
+        {
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.offsetMin = new Vector2(horizontalMargin, y - height * 0.5f);
+            rect.offsetMax = new Vector2(-horizontalMargin, y + height * 0.5f);
+            rect.anchoredPosition = new Vector2(0f, y);
+            rect.sizeDelta = new Vector2(-horizontalMargin * 2f, height);
+            rect.localPosition = new Vector3(rect.localPosition.x, rect.localPosition.y, 0f);
+            rect.localRotation = Quaternion.identity;
+            rect.localScale = Vector3.one;
+        }
+
+        private static void SetMiddleStretch(RectTransform rect, float y, float height, float horizontalMargin)
+        {
+            rect.anchorMin = new Vector2(0f, 0.5f);
+            rect.anchorMax = new Vector2(1f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.offsetMin = new Vector2(horizontalMargin, y - height * 0.5f);
+            rect.offsetMax = new Vector2(-horizontalMargin, y + height * 0.5f);
+            rect.anchoredPosition = new Vector2(0f, y);
+            rect.sizeDelta = new Vector2(-horizontalMargin * 2f, height);
+            rect.localPosition = new Vector3(rect.localPosition.x, rect.localPosition.y, 0f);
+            rect.localRotation = Quaternion.identity;
+            rect.localScale = Vector3.one;
         }
 
         private static void SetStretch(RectTransform rect)
@@ -1850,7 +1937,7 @@ namespace SquareFlow.UI
         {
             Vector2 hudSize = new Vector2(1080f, 128f);
             Vector2 statusBarSize = new Vector2(1080f, 86f);
-            Vector2 actionSize = new Vector2(360f, 76f);
+            Vector2 actionSize = new Vector2(276f, 76f);
             Vector2 orbiterStripSize = new Vector2(1064f, 92f);
             Vector2 boardPanelSize = new Vector2(1080f, 1080f);
             Vector2 queueSize = new Vector2(1064f, 164f);
@@ -1890,7 +1977,7 @@ namespace SquareFlow.UI
                 hudSize,
                 statusBarSize,
                 statusBarTopOffset,
-                new Vector2(300f, 0f),
+                new Vector2(180f, 0f),
                 actionSize,
                 Vector2.zero,
                 orbiterStripPosition,
