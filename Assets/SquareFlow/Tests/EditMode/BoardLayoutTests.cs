@@ -420,8 +420,8 @@ namespace SquareFlow.Tests
                 Transform logo = content.Find("PixelFlowLogo");
                 Assert.That(logo, Is.Not.Null);
                 RectTransform logoRect = logo.GetComponent<RectTransform>();
-                Assert.That(logoRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 425f)));
-                Assert.That(logoRect.sizeDelta, Is.EqualTo(new Vector2(760f, 360f)));
+                Assert.That(logoRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 465f)));
+                Assert.That(logoRect.sizeDelta, Is.EqualTo(new Vector2(920f, 435f)));
                 Image logoImage = logo.GetComponent<Image>();
                 Assert.That(logoImage, Is.Not.Null);
                 Assert.That(logoImage.sprite, Is.Not.Null);
@@ -436,22 +436,23 @@ namespace SquareFlow.Tests
                 Assert.That(content.Find("InstructionsCard"), Is.Null);
                 Assert.That(content.Find("LevelSelector"), Is.Not.Null);
                 Assert.That(content.Find("MenuStatsCard").GetComponent<RectTransform>().sizeDelta.x, Is.EqualTo(800f));
-                Assert.That(content.Find("MenuStatsCard").GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(105f));
-                Assert.That(content.Find("LevelSelector").GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(-130f));
+                Assert.That(content.Find("MenuStatsCard").GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(25f));
+                Assert.That(content.Find("LevelSelector").GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(-210f));
+                Assert.That(FindText(content.Find("MenuStatsCard"), "Diamond").color, Is.EqualTo((Color)new Color32(23, 60, 156, 255)));
 
                 TMP_Text playLabel = FindText(content, "Play");
                 RectTransform playButton = playLabel.transform.parent.GetComponent<RectTransform>();
                 Assert.That(playButton.gameObject.name, Is.EqualTo("PlayButton"));
                 Assert.That(playButton.sizeDelta.x, Is.EqualTo(410f));
                 Assert.That(playButton.sizeDelta.y, Is.EqualTo(128f));
-                Assert.That(playButton.anchoredPosition.y, Is.EqualTo(-405f));
+                Assert.That(playButton.anchoredPosition.y, Is.EqualTo(-485f));
                 Assert.That(playLabel.fontSize, Is.GreaterThanOrEqualTo(40));
                 Transform shine = playButton.Find("PlayButtonShine");
                 Assert.That(shine, Is.Not.Null);
                 Assert.That(shine.GetComponent<Image>().raycastTarget, Is.False);
                 Transform resetButton = content.Find("ResetAllButton");
                 Assert.That(resetButton, Is.Not.Null);
-                Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(-535f));
+                Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.EqualTo(-615f));
                 Assert.That(resetButton.GetComponent<RectTransform>().anchoredPosition.y, Is.LessThan(playButton.anchoredPosition.y));
                 Assert.That(FindText(resetButton, "Reset All"), Is.Not.Null);
                 Assert.That(FindText(content.Find("MenuStatsCard"), "MAX ORBS"), Is.Null);

@@ -174,7 +174,7 @@ namespace SquareFlow.UI
             ApplyOutline(stats, ColorWithAlpha(theme.Border, 0.58f), 1f);
             AddMenuStat(stats, "LEVEL", saveData.Level.ToString(CultureInfo.InvariantCulture), new Vector2(-220f, -2f), theme.Score);
             AddVerticalDivider(stats, 0f);
-            AddMenuStat(stats, "BOARD", shape.Name, new Vector2(220f, -2f), theme.Text);
+            AddMenuStat(stats, "BOARD", shape.Name, new Vector2(220f, -2f), MenuBoardValueColor());
 
             RectTransform selector = AddContainer(content, "LevelSelector", startLayout.LevelSelectorSize);
             ApplyGuiProPanelSkin(selector, guiProInsetPanelSprite != null ? guiProInsetPanelSprite : guiProPanelSprite, ColorWithAlpha(theme.Panel, 0.62f));
@@ -580,6 +580,11 @@ namespace SquareFlow.UI
         {
             AddText(parent, label, 18, FontStyle.Bold, theme.SubtleText, position + new Vector2(0f, 36f), new Vector2(180f, 30f));
             AddText(parent, value, 52, FontStyle.Bold, valueColor, position + new Vector2(0f, -18f), new Vector2(240f, 66f));
+        }
+
+        private static Color MenuBoardValueColor()
+        {
+            return new Color32(23, 60, 156, 255);
         }
 
         private void AddMenuLogo(RectTransform parent, Vector2 position, Vector2 size)
@@ -1775,15 +1780,15 @@ namespace SquareFlow.UI
             return new SquareFlowStartScreenLayout(
                 new Vector2(1030f, 1260f),
                 new Vector2(0f, 40f),
-                new Vector2(0f, 425f),
-                new Vector2(760f, 360f),
-                new Vector2(0f, 105f),
+                new Vector2(0f, 465f),
+                new Vector2(920f, 435f),
+                new Vector2(0f, 25f),
                 new Vector2(800f, 150f),
-                new Vector2(0f, -130f),
+                new Vector2(0f, -210f),
                 new Vector2(860f, 250f),
-                new Vector2(0f, -405f),
+                new Vector2(0f, -485f),
                 new Vector2(410f, 128f),
-                new Vector2(0f, -535f),
+                new Vector2(0f, -615f),
                 new Vector2(240f, 70f));
         }
     }
