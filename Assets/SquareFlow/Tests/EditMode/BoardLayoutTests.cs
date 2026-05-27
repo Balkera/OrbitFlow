@@ -591,7 +591,9 @@ namespace SquareFlow.Tests
                 AssertHeaderIconImage(scoreCard);
                 AssertHeaderIconImage(bestCard);
                 AssertPanelImage(header.Find("LevelBadge"));
+                Assert.That(FindText(header.Find("LevelBadge"), "LEVEL"), Is.Not.Null);
                 Assert.That(FindText(scoreCard, "0"), Is.Not.Null);
+                AssertNoShapeNameText(header);
 
                 Transform status = canvas.Find("GameStatusBar");
                 Assert.That(status, Is.Not.Null);
@@ -623,12 +625,16 @@ namespace SquareFlow.Tests
 
                 TMP_Text moves = FindText(status, "0 moves");
                 Assert.That(moves, Is.Not.Null);
+                Assert.That(moves.fontSize, Is.EqualTo(30f));
                 Assert.That(RightEdge(moves.rectTransform), Is.LessThan(LeftEdge(hudActions.GetComponent<RectTransform>())));
 
                 Transform strip = canvas.Find("OrbiterStrip");
                 TMP_Text orbiterLabel = FindText(strip, "ORBITERS");
                 Assert.That(orbiterLabel, Is.Not.Null);
-                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(2.94f).Within(0.001f));
+                Assert.That(orbiterLabel.rectTransform.localScale.x, Is.EqualTo(1.62f).Within(0.001f));
+                TMP_Text orbiterCount = FindText(strip, "0/5");
+                Assert.That(orbiterCount, Is.Not.Null);
+                Assert.That(orbiterCount.rectTransform.localScale.x, Is.EqualTo(1.62f).Within(0.001f));
                 RectTransform[] orbiterDots = NamedChildren(strip, "OrbiterDot");
                 Assert.That(orbiterDots.Length, Is.EqualTo(SquareFlowConstants.MaxActiveOrbiters));
                 Assert.That(orbiterDots[0].localScale.x, Is.EqualTo(2.94f).Within(0.001f));
@@ -729,26 +735,28 @@ namespace SquareFlow.Tests
                     header.Find("ScoreCard"),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
-                    new Vector2(330f, 104f),
-                    new Vector2(-527f, -52f),
-                    new Vector2(-197f, 52f));
+                    new Vector2(300f, 104f),
+                    new Vector2(-470f, -52f),
+                    new Vector2(-170f, 52f));
                 AssertGuiProPanel(header.Find("ScoreCard"));
                 AssertRectTransformLayout(
                     header.Find("BestCard"),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
-                    new Vector2(286f, 104f),
-                    new Vector2(-183f, -52f),
-                    new Vector2(103f, 52f));
+                    new Vector2(300f, 104f),
+                    new Vector2(-150f, -52f),
+                    new Vector2(150f, 52f));
                 AssertGuiProPanel(header.Find("BestCard"));
                 AssertRectTransformLayout(
                     header.Find("LevelBadge"),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
-                    new Vector2(122f, 92f),
-                    new Vector2(217f, -46f),
-                    new Vector2(339f, 46f));
+                    new Vector2(300f, 104f),
+                    new Vector2(170f, -52f),
+                    new Vector2(470f, 52f));
                 AssertGuiProPanel(header.Find("LevelBadge"));
+                Assert.That(FindText(header.Find("LevelBadge"), "LEVEL"), Is.Not.Null);
+                AssertNoShapeNameText(header);
                 AssertGuiProPanel(status);
                 AssertGuiProPanel(orbiterStrip);
                 AssertGuiProPanel(waiting);
@@ -896,6 +904,12 @@ namespace SquareFlow.Tests
             Assert.That(labels.Length, Is.GreaterThan(0));
             for (int i = 0; i < labels.Length; i++)
                 AssertGuiProFont(labels[i]);
+        }
+
+        private static void AssertNoShapeNameText(Transform parent)
+        {
+            foreach (BoardShape shape in BoardShapeCatalog.All)
+                Assert.That(FindText(parent, shape.Name), Is.Null, shape.Name + " should not render in the gameplay HUD.");
         }
 
         private static void AssertGuiProPanel(Transform transform, string expectedTextureName = "BasicFrame_Round20")
