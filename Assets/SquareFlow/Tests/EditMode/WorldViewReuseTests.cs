@@ -261,8 +261,14 @@ namespace SquareFlow.Tests
                 Assert.That(line, Is.Not.Null);
                 Assert.That(line.loop, Is.True);
                 Assert.That(line.positionCount, Is.EqualTo(SquareFlowVisualMetrics.OrbitRingPointCount));
-                Assert.That(line.startWidth, Is.GreaterThan(0f));
+                Assert.That(line.startWidth, Is.EqualTo(board.Cell * SquareFlowVisualMetrics.OrbitRingThicknessScale * world.WorldUnitsPerLayoutPixel).Within(0.001f));
                 Assert.That(line.startWidth, Is.EqualTo(line.endWidth));
+                Assert.That(line.startColor, Is.EqualTo((Color)new Color32(96, 247, 255, 150)));
+                Assert.That(line.endColor, Is.EqualTo(line.startColor));
+                Assert.That(line.numCornerVertices, Is.GreaterThanOrEqualTo(8));
+                Assert.That(line.numCapVertices, Is.GreaterThanOrEqualTo(8));
+                Assert.That(line.GetPosition(0).x, Is.GreaterThan(world.OrbitBounds.xMin));
+                Assert.That(line.GetPosition(0).y, Is.EqualTo(world.OrbitBounds.yMax).Within(0.001f));
             }
             finally
             {

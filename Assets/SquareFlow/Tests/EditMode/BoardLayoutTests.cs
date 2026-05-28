@@ -157,7 +157,7 @@ namespace SquareFlow.Tests
         [Test]
         public void PrismArcadeMetricsKeepOrbitLineShootersAndTileDepthProminent()
         {
-            Assert.That(SquareFlowVisualMetrics.OrbitRingThicknessScale, Is.LessThanOrEqualTo(0.06f));
+            Assert.That(SquareFlowVisualMetrics.OrbitRingThicknessScale, Is.EqualTo(0.175f));
             Assert.That(SquareFlowVisualMetrics.OrbitRingPointCount, Is.GreaterThanOrEqualTo(96));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterTokenScale, Is.GreaterThanOrEqualTo(0.95f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterGlowScale, Is.GreaterThanOrEqualTo(1.5f));

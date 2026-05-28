@@ -1762,7 +1762,7 @@ namespace SquareFlow.UI
 
     public static class SquareFlowVisualMetrics
     {
-        public const float OrbitRingThicknessScale = 0.035f;
+        public const float OrbitRingThicknessScale = 0.175f;
         public const int OrbitRingPointCount = 128;
         public const float ActiveOrbiterHolderScale = 1.62f;
         public const float ActiveOrbiterGlowScale = 1.52f;
