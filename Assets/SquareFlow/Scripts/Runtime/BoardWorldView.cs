@@ -87,7 +87,9 @@ namespace SquareFlow.Runtime
                 cell.Highlight.gameObject.SetActive(boardCell.IsOccupied && !usesTexturedSprite);
                 cell.Depth.color = boardCell.IsOccupied ? LerpColor(cell.Face.color, Color.black, SquareFlowVisualMetrics.TileDepthDarkenAmount) : Color.clear;
                 cell.Highlight.color = boardCell.IsOccupied ? ColorWithAlpha(Color.white, SquareFlowVisualMetrics.TileTopHighlightAlpha) : Color.clear;
-                cell.Label.text = LabelForCell(boardCell);
+                bool showLabel = boardCell.Type != BoardCellType.Bomb;
+                cell.Label.gameObject.SetActive(showLabel);
+                cell.Label.text = showLabel ? LabelForCell(boardCell) : string.Empty;
                 cell.Label.color = boardCell.Type == BoardCellType.Bomb || boardCell.Color == FlowColor.Yellow ? new Color32(26, 23, 64, 255) : Color.white;
                 cell.BaseFaceColor = cell.Face.color;
             }
@@ -262,7 +264,6 @@ namespace SquareFlow.Runtime
 
         private static string LabelForCell(BoardCell cell)
         {
-            if (cell.Type == BoardCellType.Bomb) return "*";
             if (cell.Type == BoardCellType.Normal && cell.Hp > 1) return cell.Hp.ToString();
             return string.Empty;
         }

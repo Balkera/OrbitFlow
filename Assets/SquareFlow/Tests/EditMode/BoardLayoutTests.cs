@@ -433,7 +433,8 @@ namespace SquareFlow.Tests
 
                 InvokeAddShooterToken(controller, wildParent.GetComponent<RectTransform>(), new Shooter("wild", FlowColor.Wild, 2, true), true);
                 Image wildImage = wildParent.transform.Find("ShooterButton").GetComponent<Image>();
-                Assert.That(wildImage.sprite.texture.name, Is.EqualTo("FlowOrbitOrange"));
+                Assert.That(wildImage.sprite.texture.name, Is.EqualTo("FlowOrbitWild"));
+                Assert.That(wildImage.sprite.texture.name, Is.Not.EqualTo("FlowOrbitOrange"));
                 Assert.That(wildImage.color, Is.EqualTo(Color.white));
             }
             finally

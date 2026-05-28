@@ -14,12 +14,15 @@ namespace SquareFlow.Runtime
         private static Sprite blockYellow;
         private static Sprite blockGreen;
         private static Sprite blockOrange;
+        private static Sprite blockBomb;
+        private static Sprite blockWild;
         private static Sprite gridCellTray;
         private static Sprite orbitRed;
         private static Sprite orbitBlue;
         private static Sprite orbitYellow;
         private static Sprite orbitGreen;
         private static Sprite orbitOrange;
+        private static Sprite orbitWild;
         private static Sprite skyBackground;
 
         public static Sprite RoundedRect
@@ -80,9 +83,15 @@ namespace SquareFlow.Runtime
         {
             Ensure();
             if (!cell.IsOccupied) return gridCellTray != null ? gridCellTray : roundedRect;
-            if (cell.Type == BoardCellType.Bomb) return blockOrange != null ? blockOrange : roundedRect;
+            if (cell.Type == BoardCellType.Bomb) return blockBomb != null ? blockBomb : blockOrange != null ? blockOrange : roundedRect;
 
-            switch (cell.Color)
+            return BlockForColor(cell.Color);
+        }
+
+        public static Sprite BlockForColor(FlowColor color)
+        {
+            Ensure();
+            switch (color)
             {
                 case FlowColor.Blue:
                     return blockBlue != null ? blockBlue : roundedRect;
@@ -90,6 +99,8 @@ namespace SquareFlow.Runtime
                     return blockYellow != null ? blockYellow : roundedRect;
                 case FlowColor.Green:
                     return blockGreen != null ? blockGreen : roundedRect;
+                case FlowColor.Wild:
+                    return blockWild != null ? blockWild : blockOrange != null ? blockOrange : roundedRect;
                 default:
                     return blockRed != null ? blockRed : roundedRect;
             }
@@ -98,7 +109,7 @@ namespace SquareFlow.Runtime
         public static Sprite OrbitForShooter(FlowColor color, bool wild)
         {
             Ensure();
-            if (wild || color == FlowColor.Wild) return orbitOrange != null ? orbitOrange : circle;
+            if (wild || color == FlowColor.Wild) return orbitWild != null ? orbitWild : orbitOrange != null ? orbitOrange : circle;
 
             switch (color)
             {
@@ -126,12 +137,15 @@ namespace SquareFlow.Runtime
             blockYellow = LoadBlockSprite("FlowBlockYellow");
             blockGreen = LoadBlockSprite("FlowBlockGreen");
             blockOrange = LoadBlockSprite("FlowBlockOrange");
+            blockBomb = LoadBlockSprite("FlowBlockBomb");
+            blockWild = LoadBlockSprite("FlowBlockWild");
             gridCellTray = LoadBlockSprite("FlowGridCellTray");
             orbitRed = LoadOrbitSprite("FlowOrbitRed");
             orbitBlue = LoadOrbitSprite("FlowOrbitBlue");
             orbitYellow = LoadOrbitSprite("FlowOrbitYellow");
             orbitGreen = LoadOrbitSprite("FlowOrbitGreen");
             orbitOrange = LoadOrbitSprite("FlowOrbitOrange");
+            orbitWild = LoadOrbitSprite("FlowOrbitWild");
             skyBackground = LoadBackgroundSprite("FlowSkyBackground");
         }
 

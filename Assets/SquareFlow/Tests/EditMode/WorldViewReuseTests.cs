@@ -161,7 +161,9 @@ namespace SquareFlow.Tests
                 AssertFaceTextureName(host.transform, 0, 1, "FlowBlockBlue");
                 AssertFaceTextureName(host.transform, 0, 2, "FlowBlockYellow");
                 AssertFaceTextureName(host.transform, 0, 3, "FlowBlockGreen");
-                AssertFaceTextureName(host.transform, 0, 4, "FlowBlockOrange");
+                AssertFaceTextureName(host.transform, 0, 4, "FlowBlockBomb");
+                Transform bombLabel = host.transform.Find("WorldCell_0_4/Label");
+                Assert.That(bombLabel.gameObject.activeSelf, Is.False);
             }
             finally
             {
@@ -399,7 +401,7 @@ namespace SquareFlow.Tests
                 Assert.That(greenColor, Is.EqualTo(theme.Green));
 
                 SpriteRenderer wildToken = host.transform.Find("WorldOrbiter_wild-id/Token").GetComponent<SpriteRenderer>();
-                Assert.That(wildToken.sprite.texture.name, Is.EqualTo("FlowOrbitOrange"));
+                Assert.That(wildToken.sprite.texture.name, Is.EqualTo("FlowOrbitWild"));
                 Assert.That(wildToken.color, Is.EqualTo(Color.white));
                 Assert.That(view.TryGetColor("wild-id", out Color wildColor), Is.True);
                 Assert.That(wildColor, Is.EqualTo(theme.Wild));
@@ -410,6 +412,23 @@ namespace SquareFlow.Tests
             {
                 Object.DestroyImmediate(host);
             }
+        }
+
+        [Test]
+        public void WorldSpritesUseDistinctSpecialTexturesInsteadOfGenericOrange()
+        {
+            Sprite bomb = SquareFlowWorldSprites.BlockForCell(BoardCell.Bomb());
+            Sprite wildBlock = SquareFlowWorldSprites.BlockForColor(FlowColor.Wild);
+            Sprite wildOrbit = SquareFlowWorldSprites.OrbitForShooter(FlowColor.Wild, true);
+            Sprite redOrbit = SquareFlowWorldSprites.OrbitForShooter(FlowColor.Red, false);
+
+            Assert.That(bomb.texture.name, Is.EqualTo("FlowBlockBomb"));
+            Assert.That(bomb.texture.name, Is.Not.EqualTo("FlowBlockOrange"));
+            Assert.That(wildBlock.texture.name, Is.EqualTo("FlowBlockWild"));
+            Assert.That(wildBlock.texture.name, Is.Not.EqualTo("FlowBlockOrange"));
+            Assert.That(wildOrbit.texture.name, Is.EqualTo("FlowOrbitWild"));
+            Assert.That(wildOrbit.texture.name, Is.Not.EqualTo("FlowOrbitOrange"));
+            Assert.That(wildOrbit.texture.name, Is.Not.EqualTo(redOrbit.texture.name));
         }
 
         [Test]
