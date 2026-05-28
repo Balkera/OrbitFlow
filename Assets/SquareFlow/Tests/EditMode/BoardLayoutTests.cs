@@ -165,7 +165,7 @@ namespace SquareFlow.Tests
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterTokenScale * SquareFlowVisualMetrics.ActiveOrbiterWorldScale, Is.InRange(0.9f, 1.05f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterLaunchDurationSeconds, Is.EqualTo(0.5f));
             Assert.That(SquareFlowVisualMetrics.ActiveOrbiterAmmoLabelFontSize, Is.EqualTo(3.5f));
-            Assert.That(SquareFlowVisualMetrics.ActiveOrbiterAmmoParticleScale, Is.EqualTo(0.1f));
+            Assert.That(SquareFlowVisualMetrics.ActiveOrbiterAmmoParticleScale, Is.EqualTo(0.5f));
             Assert.That(SquareFlowVisualMetrics.ShooterButtonMinimumDiameter, Is.GreaterThanOrEqualTo(74f));
             Assert.That(SquareFlowVisualMetrics.CellDepthOffsetScale, Is.GreaterThanOrEqualTo(0.08f));
             Assert.That(SquareFlowVisualMetrics.CellLabelFontSize, Is.EqualTo(3.5f));

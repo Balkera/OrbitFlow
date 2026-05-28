@@ -1770,7 +1770,7 @@ namespace SquareFlow.UI
         public const float ActiveOrbiterWorldScale = 1f;
         public const float ActiveOrbiterLaunchDurationSeconds = 0.5f;
         public const float ActiveOrbiterAmmoLabelFontSize = 3.5f;
-        public const float ActiveOrbiterAmmoParticleScale = 0.1f;
+        public const float ActiveOrbiterAmmoParticleScale = 0.5f;
         public const float ActiveOrbiterAmmoParticleOrbitRadiusScale = 0.72f;
         public const float ActiveOrbiterAmmoParticleRotationDegreesPerSecond = 120f;
         public const float ShooterButtonMinimumDiameter = 100f;
