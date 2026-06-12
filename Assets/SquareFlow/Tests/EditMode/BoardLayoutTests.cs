@@ -7,6 +7,7 @@ using SquareFlow.Runtime;
 using SquareFlow.UI;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
@@ -585,6 +586,53 @@ namespace SquareFlow.Tests
             finally
             {
                 Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void RuntimeEventSystemIsReadyForGameViewMouseClicks()
+        {
+            bool previousRunInBackground = Application.runInBackground;
+            GameObject eventSystemObject = new GameObject("EventSystem", typeof(EventSystem));
+            object mouse = null;
+            bool createdMouse = false;
+            bool mouseWasEnabled = false;
+
+            try
+            {
+                System.Type inputModuleType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+                Assert.That(inputModuleType, Is.Not.Null);
+                Component inputModule = eventSystemObject.AddComponent(inputModuleType);
+                InvokePublic(inputModule, "UnassignActions");
+
+                Application.runInBackground = false;
+                mouse = EnsureMouseForInputSystemTest(out createdMouse);
+                mouseWasEnabled = IsInputDeviceEnabled(mouse);
+                SetInputDeviceEnabled(mouse, false);
+
+                InvokeStaticPrivate(typeof(SquareFlowGameController), "EnsureEventSystem");
+
+                Assert.That(Application.runInBackground, Is.True);
+                Assert.That(GetProperty(inputModule, "actionsAsset"), Is.Not.Null);
+                AssertActionReference(inputModule, "point");
+                AssertActionReference(inputModule, "leftClick");
+                AssertActionReferenceEnabled(inputModule, "point");
+                AssertActionReferenceEnabled(inputModule, "leftClick");
+                Assert.That(GetProperty(inputModule, "pointerBehavior").ToString(), Is.EqualTo("SingleUnifiedPointer"));
+                Assert.That(IsInputDeviceEnabled(mouse), Is.True);
+            }
+            finally
+            {
+                if (mouse != null)
+                {
+                    if (createdMouse)
+                        RemoveInputDevice(mouse);
+                    else
+                        SetInputDeviceEnabled(mouse, mouseWasEnabled);
+                }
+
+                Application.runInBackground = previousRunInBackground;
+                Object.DestroyImmediate(eventSystemObject);
             }
         }
 
@@ -1451,6 +1499,96 @@ namespace SquareFlow.Tests
         {
             MethodInfo method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
             method.Invoke(target, args);
+        }
+
+        private static void InvokeStaticPrivate(System.Type type, string methodName)
+        {
+            MethodInfo method = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
+            method.Invoke(null, null);
+        }
+
+        private static void InvokePublic(object target, string methodName)
+        {
+            MethodInfo method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public);
+            method.Invoke(target, null);
+        }
+
+        private static object GetProperty(object target, string propertyName)
+        {
+            PropertyInfo property = target.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+            return property.GetValue(target);
+        }
+
+        private static void AssertActionReference(object inputModule, string propertyName)
+        {
+            object actionReference = GetProperty(inputModule, propertyName);
+            Assert.That(actionReference, Is.Not.Null);
+            object action = GetProperty(actionReference, "action");
+            Assert.That(action, Is.Not.Null);
+        }
+
+        private static void AssertActionReferenceEnabled(object inputModule, string propertyName)
+        {
+            object actionReference = GetProperty(inputModule, propertyName);
+            object action = GetProperty(actionReference, "action");
+            Assert.That(GetProperty(action, "enabled"), Is.True);
+        }
+
+        private static object EnsureMouseForInputSystemTest(out bool created)
+        {
+            System.Type mouseType = System.Type.GetType("UnityEngine.InputSystem.Mouse, Unity.InputSystem");
+            Assert.That(mouseType, Is.Not.Null);
+
+            object mouse = GetStaticProperty(mouseType, "current");
+            if (mouse != null)
+            {
+                created = false;
+                return mouse;
+            }
+
+            System.Type inputSystemType = System.Type.GetType("UnityEngine.InputSystem.InputSystem, Unity.InputSystem");
+            Assert.That(inputSystemType, Is.Not.Null);
+            MethodInfo addDevice = inputSystemType.GetMethod("AddDevice", new[] { typeof(string), typeof(string), typeof(string) });
+            Assert.That(addDevice, Is.Not.Null);
+            created = true;
+            return addDevice.Invoke(null, new object[] { "Mouse", null, null });
+        }
+
+        private static void SetInputDeviceEnabled(object device, bool enabled)
+        {
+            System.Type inputSystemType = System.Type.GetType("UnityEngine.InputSystem.InputSystem, Unity.InputSystem");
+            System.Type inputDeviceType = System.Type.GetType("UnityEngine.InputSystem.InputDevice, Unity.InputSystem");
+            Assert.That(inputSystemType, Is.Not.Null);
+            Assert.That(inputDeviceType, Is.Not.Null);
+            string methodName = enabled ? "EnableDevice" : "DisableDevice";
+            MethodInfo method = enabled
+                ? inputSystemType.GetMethod(methodName, new[] { inputDeviceType })
+                : inputSystemType.GetMethod(methodName, new[] { inputDeviceType, typeof(bool) });
+            Assert.That(method, Is.Not.Null);
+            object[] args = enabled ? new[] { device } : new[] { device, false };
+            method.Invoke(null, args);
+        }
+
+        private static bool IsInputDeviceEnabled(object device)
+        {
+            return (bool)GetProperty(device, "enabled");
+        }
+
+        private static void RemoveInputDevice(object device)
+        {
+            System.Type inputSystemType = System.Type.GetType("UnityEngine.InputSystem.InputSystem, Unity.InputSystem");
+            System.Type inputDeviceType = System.Type.GetType("UnityEngine.InputSystem.InputDevice, Unity.InputSystem");
+            Assert.That(inputSystemType, Is.Not.Null);
+            Assert.That(inputDeviceType, Is.Not.Null);
+            MethodInfo method = inputSystemType.GetMethod("RemoveDevice", new[] { inputDeviceType });
+            Assert.That(method, Is.Not.Null);
+            method.Invoke(null, new[] { device });
+        }
+
+        private static object GetStaticProperty(System.Type type, string propertyName)
+        {
+            PropertyInfo property = type.GetProperty(propertyName, BindingFlags.Static | BindingFlags.Public);
+            return property.GetValue(null);
         }
 
         private static void SetPrivateField<T>(object target, string fieldName, T value)

@@ -956,11 +956,11 @@ PlayerSettings:
   captureStartupLogs: {}
   activeInputHandler: 1
   windowsGamepadBackendHint: 0
-  cloudProjectId: 5662b65b-fc13-4845-ac67-622ab85d25dd
+  cloudProjectId: 4aab4195-266a-43f4-bfce-f9f266fd9ee6
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: My project
-  organizationId: atahan1477
+  projectName: SquareFlow
+  organizationId: exegogames
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}

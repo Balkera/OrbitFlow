@@ -7,6 +7,7 @@ using SquareFlow.Runtime;
 using UnityEngine;
 using UnityEngine.EventSystems;
 #if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 #endif
 using UnityEngine.UI;
@@ -108,6 +109,9 @@ namespace SquareFlow.UI
 
         private void Update()
         {
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+            EnsureEditorMouseInput();
+#endif
             if (state == null || rules == null || state.Result != GameResult.None) return;
 
             rules.UpdateCombo(Time.deltaTime);
@@ -1685,6 +1689,10 @@ namespace SquareFlow.UI
 
         private static void EnsureEventSystem()
         {
+#if UNITY_EDITOR
+            Application.runInBackground = true;
+#endif
+
             EventSystem eventSystem = FindFirstObjectByType<EventSystem>();
             if (eventSystem == null)
             {
@@ -1693,8 +1701,15 @@ namespace SquareFlow.UI
             }
 
 #if ENABLE_INPUT_SYSTEM
-            if (eventSystem.GetComponent<InputSystemUIInputModule>() == null)
-                eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+            InputSystemUIInputModule inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+            if (inputModule == null)
+                inputModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+
+            EnsureInputSystemUiActions(inputModule);
+            inputModule.pointerBehavior = UIPointerBehavior.SingleUnifiedPointer;
+#if UNITY_EDITOR
+            EnsureEditorMouseInput();
+#endif
 
             BaseInputModule[] modules = eventSystem.GetComponents<BaseInputModule>();
             for (int i = 0; i < modules.Length; i++)
@@ -1709,6 +1724,29 @@ namespace SquareFlow.UI
             Debug.LogWarning("Square Flow UI needs an EventSystem input module, but neither Input System nor legacy input is enabled.");
 #endif
         }
+
+#if ENABLE_INPUT_SYSTEM
+        private static void EnsureInputSystemUiActions(InputSystemUIInputModule inputModule)
+        {
+            if (inputModule == null) return;
+            if (inputModule.actionsAsset != null
+                && inputModule.point != null
+                && inputModule.point.action != null
+                && inputModule.leftClick != null
+                && inputModule.leftClick.action != null)
+                return;
+
+            inputModule.AssignDefaultActions();
+        }
+
+#if UNITY_EDITOR
+        private static void EnsureEditorMouseInput()
+        {
+            if (Mouse.current != null && !Mouse.current.enabled)
+                InputSystem.EnableDevice(Mouse.current);
+        }
+#endif
+#endif
 
     }
 
